@@ -1,0 +1,72 @@
+
+/* https://searchfox.org/comm-central/source/mozilla/browser/components/extensions/extension.css */
+body {
+	/* At least during alpha stage selectable text may be useful for bug reports */
+	user-select: text;
+}
+/* Reset UI theme, otherwise background is not applied */
+button.panel-section-footer-button {
+  border: none;
+}
+
+a.panel-list-item, a.panel-section-header {
+  text-decoration: none;
+  color: inherit;
+}
+.panel-list-item {
+  padding-inline: 8px;
+}
+a.panel-list-item:active, a.panel-list-item:focus,
+a.panel-section-header:focus {
+  box-shadow: inset 0 0 0 2px rgba(97, 181, 255, 0.75);
+  outline: none;
+}
+a.panel-list-item > .text {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  flex-shrink: 1;
+  margin-inline: 4px;
+}
+.panel-list-item > .icon,
+a.panel-list-item > .text-shortcut {
+  width: 16px;
+  text-align: center;
+}
+
+.display-none {
+	display: none;
+}
+.hidden {
+	visibility: hidden;
+}
+.mentions {
+	height: 20em;
+	padding-inline: 8px;
+}
+.log-list {
+	max-height: 20em;
+}
+.log-list > .panel-list-item {
+	overflow: hidden;
+}
+.log-list > .panel-list-item > .text-shortcut {
+	white-space: nowrap;
+	width: 1.5em;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+.log-list > .panel-list-item > .date,
+.log-list > .panel-list-item > .text {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	margin-inline: 4px;
+}
+.log-list > .panel-list-item > .date {
+	width: 5em;
+}
+.panel-section-header > .icon-section-header {
+	display: flex;
+	align-items: center;
+}

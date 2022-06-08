@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>orco Preferences</title>
+    <link rel="icon" sizes="16x16" href="/icons/orco-16.png">
+    <link rel="icon" sizes="32x32" href="/icons/orco-32.png">
+    <link rel="fluid-icon" sizes="128x128" href="/icons/orco-128.png">
+    <link rel="stylesheet" href="/orco_pages/orcop_options.css" type="text/css">
+  </head>
+  <body>
+    <h1>orco Preferences</h1>
+    <p>
+    A native messaging helper application is required to scan notes for mentioned
+    Message-ID links.
+    The add-on is created having in mind bURL
+    <a target="_blank" rel="noreferrer nofollow"
+      href="https://github.com/maxnikulin/burl">https://github.com/maxnikulin/burl</a>
+    Install it or maybe an alternative implementation (API has not stabilized yet).
+    </p>
+    <p>
+      Please, <a id="fileSave" href="" download>make backup of current settings</a>.
+    </p>
+    <form>
+      <label>Load file from backup:
+        <input type="file" id="fileLoad" accept="text/plain,application/json,.txt,.json">
+      </label>
+    </form>
+    <p id="fileReport" class="limitedWidth"></p>
+    <form id="formDescriptors" class="limitedWidthChildren">
+    </form>
+    <script src="/mwel/pages/mwel_dom.js"></script>
+    <script src="/orco_pages/orcop_options.js"></script>
+  </body>
+</html>

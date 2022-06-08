@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>orco-0.2 Release Notes</title>
+  </head>
+  <body>
+    <h1>orco-0.2</h1>
+    <p>A pre-release to test updates. You should have at least version 0.2.1 installed.
+    The add-on requires native messaging helper application
+    <a href="https://github.com/maxnikulin/burl">https://github.com/maxnikulin/burl</a>
+    </p>
+    <p>
+    Add-on features:
+    </p>
+    <ul>
+      <li>A column in message list view displaying an icon if Message-ID is found in your notes.
+        It is hidden by default.</li>
+      <li>List of mentioned mentions is fetched using bURL native messaging host application.
+        By default <samp>mid:</samp> links are extracted.  To add web archives of mail lists
+        (URLs must contain Message-IDs), add more prefixes in add-on settings.
+        To enable <samp>news:</samp> or <samp>nntp:</samp> links, add more schemes
+        to the command invoking bURL in the wrapper script.</li>
+      <li>From context menu for message list or directly from add-on toolbar button
+       (browser action) popup a command to open particular location in your notes file
+       may be sent to GNU Emacs.  It requires running Emacs server,
+       a <code>server-visit-hook<code> to reveal folded headings is suggested.</li>
+    </ul>
+  </body>
+</html>

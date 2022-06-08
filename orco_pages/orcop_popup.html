@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>orco Actions</title>
+    <link rel="stylesheet" href="orco_mentions.css" type="text/css">
+    <link rel="stylesheet" href="/orco_pages/orcop_popup.css" type="text/css">
+    <link rel="icon" sizes="16x16" href="/icons/orco-16.png">
+    <link rel="icon" sizes="32x32" href="/icons/orco-32.png">
+    <link rel="fluid-icon" sizes="128x128" href="/icons/orco-128.png">
+    <script src="/mwel/common/mwel_common.js"></script>
+    <script src="/mwel/common/mwel_clipboard.js"></script>
+    <script src="/mwel/pages/mwel_dom.js"></script>
+    <script src="/lrlib/pages/lrp_mentions_view.js"></script>
+    <script src="/orco_common/orco_common.js"></script>
+  </head>
+  <!-- https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/user_interface/Browser_styles -->
+  <body class="panel">
+    <!-- Main page -->
+    <div id="page_main" class="menu-page">
+      <header class="panel-section panel-section-header">
+        <span class="icon-section-header">
+          <img src="/icons/orco-32.png" alt="" class="icon" aria-hidden="true">
+        </span>
+        <span class="text-section-header">orco&nbsp;&mdash; Org Column</span>
+      </header>
+      <div class="panel-section panel-section-list">
+        <a href="#page_mentions" class="panel-list-item" role="menuitem" data-orco-action="mentions">
+          <span class="icon" role="img" aria-hidden="true">&#x1f984;</span><!-- unicorn -->
+          <span class="text" id="text_main_mentions">No mentions</span>
+          <span class="text-shortcut" role="img" aria-label="more">&gt;</span>
+        </a>
+        <a href="#page_log" class="panel-list-item" role="menuitem" id="log_message_main">
+          <span class="icon"></span>
+          <span class="text">Log:
+            <span class="date"></span>
+            <span class="message"><!--
+              a guard to be replaced during initialization
+              -->Internal Error</span>
+          </span>
+          <span class="text-shortcut" role="img" aria-label="more">&gt;</span>
+        </a>
+        <a href="#command_settings" class="panel-list-item" role="menuitem" data-orco-action="settings">
+          <span class="icon" role="img" aria-hidden="true">&#x2699;</span><!-- gear -->
+          <span class="text">Preferences</span>
+        </a>
+      </div>
+      <footer class="panel-section panel-section-footer">
+        <!-- margin -1px for buttons causes overflow and scroller -->
+        <div class="panel-section-footer-separator"></div>
+        <button id="button_main_abort" name="abort" class="panel-section-footer-button">Abort</button>
+        <div class="panel-section-footer-separator"></div>
+        <button id="button_main_refresh"
+          name="refresh"
+          class="panel-section-footer-button default"
+          ><span role="img" aria-hidden="true">&#x1f504;</span>Refresh</button>
+        <div class="panel-section-footer-separator"></div>
+      </footer>
+    </div>
+    <!-- Log page -->
+    <div id="page_log" class="display-none menu-page">
+      <a href="#page_main" role="menuitem" data-orco-action="back" class="panel-section panel-section-header">
+        <span class="icon-section-header" role="img" aria-label="to main menu">&lt;</span>
+        <span class="text-section-header">orco Log</span>
+      </a>
+      <div class="panel-section panel-section-list log-list">
+      <!-- div added newline to selected text, so use span elements
+        to copy text as continuous lines -->
+        <div id="log_message_0" class="panel-list-item hidden">
+          <span class="icon"></span>
+          <span class="date"></span>
+          <span class="text"></span>
+          <span class="text-shortcut"></span>
+        </div>
+        <div id="log_message_1" class="panel-list-item hidden">
+          <span class="icon"></span>
+          <span class="date"></span>
+          <span class="text"></span>
+          <span class="text-shortcut"></span>
+        </div>
+        <div id="log_message_2" class="panel-list-item hidden">
+          <span class="icon"></span>
+          <span class="date"></span>
+          <span class="text"></span>
+          <span class="text-shortcut"></span>
+        </div>
+        <div id="log_message_3" class="panel-list-item hidden">
+          <span class="icon"></span>
+          <span class="date"></span>
+          <span class="text"></span>
+          <span class="text-shortcut"></span>
+        </div>
+        <div id="log_message_4" class="panel-list-item hidden">
+          <span class="icon"></span>
+          <span class="date"></span>
+          <span class="text"></span>
+          <span class="text-shortcut"></span>
+        </div>
+      </div>
+      <footer class="panel-section panel-section-footer">
+        <!-- margin -1px for buttons causes overflow and scroller -->
+        <div class="panel-section-footer-separator"></div>
+        <button name="logCopy" class="panel-section-footer-button">Copy</button>
+        <div class="panel-section-footer-separator"></div>
+        <button class="panel-section-footer-button default" data-orco-action="logClear"
+          >Clear</button>
+        <div class="panel-section-footer-separator"></div>
+      </footer>
+    </div>
+    <!-- Mentions page -->
+    <div id="page_mentions" class="display-none menu-page">
+      <a href="#page_main" role="menuitem" data-orco-action="back" class="panel-section panel-section-header">
+        <span class="icon-section-header" role="img" aria-label="to main menu">&lt;</span>
+        <span class="text-section-header">Mentions in Org Files</span>
+      </a>
+      <div class="mentions" id="mentions_mentions">
+      </div>
+      <div class="panel-section-separator"></div>
+      <div class="panel-section panel-section-list">
+        <a href="#page_log" class="panel-list-item" role="menuitem" id="log_message_mentions">
+          <span class="icon"></span>
+          <span class="text">Log:
+            <span class="date"></span>
+            <span class="message"><!--
+              a guard to be replaced during initialization
+              -->Internal Error</span>
+          </span>
+          <span class="text-shortcut" role="img" aria-label="more">&gt;</span>
+        </a>
+      </div>
+      <footer class="panel-section panel-section-footer">
+        <!-- margin -1px for buttons causes overflow and scroller -->
+        <div class="panel-section-footer-separator"></div>
+        <button id="button_mentions_abort" name="abort" class="panel-section-footer-button">Abort</button>
+        <div class="panel-section-footer-separator"></div>
+        <button
+          id="button_mentions_refresh"
+          name="mentionsRefresh"
+          class="panel-section-footer-button default"
+          ><span role="img" aria-hidden="true">&#x1f504;</span>Refresh</button>
+        <div class="panel-section-footer-separator"></div>
+      </footer>
+    </div>
+    <script src="/orco_pages/orcop_popup.js"></script>
+  </body>
+</html>

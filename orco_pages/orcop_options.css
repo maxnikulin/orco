@@ -1,0 +1,155 @@
+
+/* Warning: options page can not be scrolled from keyboard:
+ * https://bugzilla.mozilla.org/1770726
+ * Add-on "options_ui" page can not be scrolled from keyboard
+ */
+html {
+	/* Suppress scrollers due to negative margins
+	 * and reserve some space for outline around focused elements */
+	padding-inline: 1ex;
+}
+
+body {
+	/* Injected CSS (desktop theme?) could cause 1em smaller
+	 * for body than for html element and result in inconsistent
+	 * margins.
+	 *
+	 * Do not use `font-size` since it affects monospace font as well. */
+	font: 1rem system-ui, sans-serif;
+	background-color: white;
+	color: black;
+	margin: 0px auto;
+	max-width: 42rem;
+	overflow-wrap: anywhere;
+	/* Override
+	 * https://searchfox.org/comm-central/source/mozilla/browser/components/extensions/extension.css */
+	user-select: text;
+}
+
+.flexLineContainer {
+	display: flex;
+	flex-wrap: wrap;
+	flex-grow: 1;
+	align-items: baseline;
+}
+
+.flexGrow, .flexLineContainer > * {
+	flex-grow: 1;
+}
+
+.flexLineContainer > .flexFixed, .flexLineContainer > .defaultLabel {
+	flex-grow: 0;
+}
+
+.textParameter .defaultLabel {
+	display: block;
+}
+
+/* Scroll bar for user-resizable textarea. Reserve some space for focus shadow. */
+.scroll {
+	overflow: auto;
+	margin-inline: -0.25rem;
+	padding-inline: 0.25em;
+	display: flex;
+}
+.scrollContainer, .textParameter {
+	/* Override .limitedWidthChildren > * */
+	width: auto;
+}
+.scroll > * {
+	/* otherwise texarea could not be wider than window in Chrome */
+	flex-shrink: 0;
+}
+
+/* Gaps between columns of form fields */
+.flexLineContainer {
+	margin-inline: -0.25ex;
+}
+
+.flexLineContainer > * {
+	margin-inline: 0.25ex;
+}
+
+/* Align checkbox to the left content edge in two-line layout */
+input[type="checkbox"] {
+	margin-left: 0px;
+}
+
+button {
+	margin-inline-start: 0px;
+	margin-inline-end: 1.5ex;
+}
+
+input[type="file"] {
+	padding-left: 0px;
+}
+
+/* Align right textarea to right edge of content */
+textarea {
+	/* 0.5rem for left and right focus shadow */
+	width: 100%;
+	box-sizing: border-box;
+	display: block;
+}
+
+input, textarea {
+	padding-top: 0.25ex;
+	padding-bottom: 0.25ex;
+	padding-inline: 0.5ex;
+	margin-top: 0.75ex;
+	margin-bottom: 0.75ex;
+}
+
+button {
+	min-width: 18ex;
+}
+
+/* Emphasize whether user or default value is active by thick underline. */
+div.userValue div.userInputContainer, div.defaultValue div.defaultInputContainer {
+	box-shadow: 0px 5px 0px 0px steelblue;
+}
+
+div.userInputContainer, div.defaultInputContainer {
+	/* Reserve space for shadow cast by active value. */
+	padding-bottom: 2px;
+	margin-bottom: 7px;
+}
+
+div.defaultValue .userInput {
+	opacity: 0.6;
+}
+
+/* Force reset of style of input form elements.
+ * Adjusting some property, e.g. background color
+ * could reset other values from desktop environment defaults
+ * to browser default style.
+ * Chrome defaults are too heavy and black at least on linux.
+ */
+textarea, input:not([type]), input[type="text"] {
+	border-color: lightsteelblue;
+}
+
+textarea, input:not([type]), input[type="text"], button {
+	border-style: solid;
+	border-width: thin;
+	border-radius: 2pt;
+}
+
+textarea:read-only, input:not([type]):read-only, input[type="text"]:read-only {
+	border-style: solid;
+	background-color: gainsboro;
+	border-color: gray;
+}
+
+.error {
+	background-color: #ffa0a0;
+}
+
+h1 {
+	font-size: 1.5rem;
+}
+
+* > h1:first-child {
+	/* Remove space at the top of the page */
+	margin-top: 0px;
+}

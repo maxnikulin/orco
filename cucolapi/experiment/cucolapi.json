@@ -1,0 +1,52 @@
+[
+	{
+		"namespace": "cucolapi",
+		"functions": [
+			{
+				"name": "add",
+				"type": "function",
+				"async": true,
+				"description": "Add columns to folder message lists",
+				"parameters": [
+					{
+						"name": "columnDescriptors",
+						"type": "any",
+						"description": "Array of objects describing column properties",
+						"items": {
+							"type": "any"
+						}
+					}, {
+						"name": "columnDataMap",
+						"type": "any",
+						"optional": true,
+						"description": "Mapping column ID to to object that associates Message-ID with state of column cells"
+					}
+				]
+			}, {
+				"name": "remove",
+				"type": "function",
+				"async": true,
+				"description": "Add columns to folder message lists",
+				"parameters": [
+					{
+						"name": "columnDescriptors",
+						"type": "any",
+						"description": "Array of objects describing column properties"
+					}
+				]
+			}, {
+				"name": "updateData",
+				"type": "function",
+				"async": true,
+				"description": "Add columns to folder message lists",
+				"parameters": [
+					{
+						"name": "columnDataMap",
+						"type": "any",
+						"description": "Mapping column ID to to object that associates Message-ID with state of column cells"
+					}
+				]
+			}
+		]
+	}
+]

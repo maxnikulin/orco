@@ -1,0 +1,196 @@
+
+#+PROPERTY: header-args :eval never-export :exports code :results silent
+#+title: orco — Org Mode column, a Thunderbird add-on
+#+description: Allows to see which mail messages are mentioned in your notes.
+
+Allows to see which mail messages are mentioned in your notes.
+
+#+attr_html: :alt Screenshot of orco in action: icons in message list and links to notes displayed in popup
+#+attt_html: :max-width 100%
+[[file:screenshots/orco-mentions.png]]
+
+#+begin_abstract
+orco is an extension for the
+[[https://www.thunderbird.net/][Thunderbird]] mail and news client
+that is a bridge to notes stored
+in [[https://orgmode.org][Org Mode]]
+for [[https://www.gnu.org/software/emacs/][GNU Emacs]].
+It adds a column to message list view displaying
+an icon for messages when their Message-ID's are mentioned
+in Org files (actually any text files with the same link format).
+#+end_abstract
+
+* It is an alpha version
+
+Compatibility: Thunderbird-91 and above.
+
+*Warning.* Project development stage: proof of concept.
+I am not tightly familiar with Thunderbird internals.
+I hope, it should not break anything in your precious profile
+data, but I am not completely sure.
+
+*Warning.* This add-on does not store any data in =.msf= files
+(Thunderbird stores the custom column properties though).
+Lack of such optimization may impair performance,
+however I have not faced such issue yet.
+The extension does not add or modify message headers
+to reflect presence in your notes. Depending on your workflow
+it may be an advantage or in some cases perhaps a defect.
+
+* Introduction
+
+To see how it works you should have some references to messages
+in your notes.
+The idea is to use links based on Message-ID header, primary
+=mid:= ones, for background see
+[[https://www.rfc-editor.org/rfc/rfc2392.html][RFC 2392 - Content-ID and Message-ID Uniform Resource Locators]].
+Other link types like =news:= or mail list archive sites
+may require some configuration.  Examples of such links:
+=mid:sn60sv$105n$1@ciao.gmane.io=
+=[[news://news.gmane.io/gmane.emacs.orgmode/sn60sv$105n$1@ciao.gmane.io][LinkRemark browser extension]]=
+=<https://list.orgmode.org/sn60sv$105n$1@ciao.gmane.io/>=.
+To access local files Thunderbird extensions should use so called
+native messaging helper application (backend).
+The recommended tool to extract links from the notes is
+bURL <https://github.com/maxnikulin/burl>.
+You may create your own one, but I do not consider API as settled,
+so tracking of changes may be a burden.
+Configure the helper and specify its ID (name) in the add-on configuration.
+
+Creating notes linked to messages is a subject of another add-on,
+so this extension does not use
+[[https://orgmode.org/manual/Protocols.html][org-protocol]]
+([[info:org#Protocols][info "(org) Protocols"]]).
+
+* Install
+
+I am going to publish orco add-on to the Thunderbird extension catalog later.
+For a while download the latest release as an =.xpi= file
+from the releases section of the GitHub project
+<https://github.com/maxnikulin/orco/releases/>
+and use "install from file" option in the add-on management tab.
+Alternatively a repository clone may be loaded as a temporary extension
+from the add-on debugging tab. Thunderbird removes column state from
+folder views when temporary add-on is not loaded, so it may be inconvenient..
+A new toolbar button should appear in the mail tabs.
+Right click on message list header should reveal new column
+that may be added to the folder view.
+
+Download an archive with bURL from
+<https://github.com/maxnikulin/burl/releases>
+and extract the =burl_backend= executable,
+let's assume that you created =~/.local/share/burl= folder for it.
+Some details related to configuration may be found in
+[[https://github.com/maxnikulin/burl][README file for bURL]]
+and for the
+[[https://github.com/maxnikulin/linkremark][LinkRemark browser extension]].
+
+If you have installed bURL earlier for LinkRemark, update it to the latest
+release.  As to configuration, it should be enough
+to add =orco@maxnikulin.github.io= the =allowed_extensions= array
+in the native application manifest.  The latter is located in
+=~/.mozilla/native-messaging-hosts=.  If you use =news:= or =nntp:= links
+in your notes then open the wrapper script specified in the =path= field
+of the manifest and add e.g. =-scheme news= option to =burl_backend= command line.
+
+For new users or if you prefer to have separate configuration for LinkRemark
+and for orco it is necessary to create a new native messaging application manifest
+and a wrapper for =burl_backend= that serves as its configuration file.
+You need to provide paths to =burl_backend= and the wrapper,
+to specify files for link lookup, to choose a name for native messaging helper
+("burl" in the example below). Optionally add options like =-scheme news=
+(=mid:= and =https:= links are extracted by default)
+#+begin_example
+  mkdir -p ~/.mozilla/native-messaging-hosts
+  ~/.local/share/burl/burl_backend -manifest-firefox ~/.mozilla/native-messaging-hosts/ \
+      -mozilla-extension orco@maxnikulin.github.io \
+      -backend burl \
+      -wrapper ~/.local/share/burl/burl_wrapper \
+      -org ~/org/notes.org \
+      -org ~/org/capture.org
+#+end_example
+It should create =~/.mozilla/native-messaging-hosts/burl.json= and
+=~/.local/share/burl/burl_wrapper= files.  You may edit them to adjust
+configuration.
+
+Open Thunderbird add-on settings for orco and specify "burl" (or the name
+you have chosen on the previous step) as native messaging helper.
+If you have messages linked to emacs-orgmode mail list archive at
+<https://list.orgmode.org/> than you may add this URL to the list
+of prefixes.
+
+Click on the add-on toolbar button (browser action) and do "refresh" in the popup.
+The add-on fetches Message-IDs during Thunderbird startup.
+There is no option to watch files for changes or setup periodic refresh yet.
+
+To open particular locations in the files where the message is mentioned
+Emacs server should be running: [[elisp:(server-start)][M-x server-start]]
+For background see
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Emacs-Server.html][Server]]
+([[info:emacs#Emacs Server][info "(emacs) Emacs Server"]]).
+
+Link may be hidden inside a folded heading.
+To open it you may try the following hook:
+#+begin_src elisp
+  (defun burl-org-reveal-folded-line ()
+    (when (derived-mode-p 'org-mode)
+      (org-reveal)))
+
+  (add-hook 'server-visit-hook #'burl-org-reveal-folded-line)
+#+end_src
+Alternatively use =C-c C-r= that is a binding for =M-x= [[help:org-reveal][org-reveal]].
+
+* Permissions
+
+For details see
+[[https://support.mozilla.org/kb/permission-request-messages-thunderbird-extensions][Permission request messages for Thunderbird extensions]]
+
+#+begin_quote
+Have full, unrestricted access to Thunderbird, and your computer
+#+end_quote
+
+WebExtensions API for add-ons does not provide a way to add custom columns,
+so low level access using
+[[https://developer.thunderbird.net/add-ons/mailextensions/experiments][experiment APIs]]
+is required to implement the feature.
+The message sounds dangerous for purpose, so you need to audit the code
+and to decided if you trust the developers.
+Actually this extension monitors for tabs and windows with message list,
+adds column and response to requests what should be displayed for particular
+messages and threads by querying content of the Message-ID header.
+
+Other permissions are hidden behind the most important one.
+
+Exchange messages with other programs (=nativeMessaging=)
+
+It is actual way to make requests related to file content or
+to open particular location in Emacs.  Explicit configuration
+is required to allow native messaging helper, but it is
+essential as well.
+
+"messagesRead" to obtain list of selected or displayed messages in response to
+browser action click. Otherwise use context menu item to check mentions.
+
+* Troubleshooting
+
+The copy button on the log page of the popup puts to clipboard more details
+than it is shown in the popup.
+
+Check Thunderbirbird console =Ctrl+Shift+J= for errors, open add-on debugging tab
+and click on "Inspect" link to get access to developers tools for the extension
+and switch to console to see if some problem is reported there.
+
+For native messaging backend problems see the related section in Mozilla
+[[https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging#Troubleshooting][developer guide]]
+
+* License
+
+orco is published under [[https://www.gnu.org/licenses/gpl-3.0.html][the GNU GPLv3 license]] or any later
+version. See the [[file:LICENSE.txt]] file in this directory.
+
+#+begin_center
+#+attr_html: :alt orco icon
+[[file:icons/orco-128.png]]
+#+end_center
+
+# LocalWords: LinkRemark Thunderbird bURL backend orco

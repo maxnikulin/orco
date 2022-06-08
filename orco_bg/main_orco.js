@@ -1,0 +1,284 @@
+/*
+   Copyright (C) 2022 Max Nikulin
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+"use strict";
+
+var con = con || console;
+var gOrcoB = orcoMakeGlobal(gOrcoB);
+
+function orcoMakeGlobal(orco) {
+	if (orco !== undefined) {
+		return orco;
+	}
+	orco = {};
+	const props = {
+		SETTING_PREFIX: "burl.linkPrefix",
+		SETTING_BACKEND: "burl.backend",
+		MAX_MENTIONS_MESSAGES: 4,
+		// Column value mapping.
+		// Transparent for structured clone and no type conversion
+		// during getting of `Object` properties.
+		TRUE_VALUE: "1",
+	};
+	for (const [ key, value ] of Object.entries(props)) {
+		Object.defineProperty(orco, key, {
+			value,
+			writable: false,
+			enumerable: true,
+			configurable: true,
+		});
+	}
+	orco.getId = mwel_common.makeGetId("b");
+	orco.singleTask = new OrcoSingleTask(orco.getId);
+	return orco;
+}
+
+class OrcoBackendSettings {
+	constructor(orco) {
+		this._orco = orco;
+	}
+	get backend() {
+		return this._orco.addonSettings.getOption(this._orco.SETTING_BACKEND);
+	}
+	get prefix() {
+		return this._orco.addonSettings.getOption(this._orco.SETTING_PREFIX);
+	}
+}
+
+function orcoRegisterSettings() {
+	// Since this is a thunderbird-only extension, `browser.runtime.id`
+	// should not cause any problem as well.
+	const settings = new LrSettings(
+		"io.github.maxnikulin.orco", browser.storage.local);
+	gOrcoB.addonSettings = settings;
+	browser.storage.onChanged.addListener(settings.changedListener);
+	settings.registerGroup({
+		name: "burl",
+		title: "Message-ID Extraction",
+		priority: 50,
+	});
+	settings.registerOption({
+		name: gOrcoB.SETTING_BACKEND,
+		defaultValue: null,
+		title: "Native messaging application (host)",
+		version: "0.1",
+		description: [
+			"The extension requires a helper application running outside of Thunderbird.",
+			"Please, install https://github.com/maxnikulin/burl/",
+			"Create native messaging manifest and specify name (identifier)",
+			"of the application",
+			"\n",
+			"See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging",
+			"for details how to configure native messaging application.",
+		],
+		parent: "burl",
+	});
+	settings.registerOption({
+		name: gOrcoB.SETTING_PREFIX,
+		defaultValue: "mid:, news:, nntp:\nhttps://mid.mail-archive.com/\nhttp://mid.mail-archive.com/",
+		title: "Prefixes to extract Message-ID links",
+		version: "0.1",
+		type: "text",
+		description: [
+			"URI schemes and prefixes to extract links containing Message-ID.",
+			"Add e.g. https://list.orgmode.org/ and https://orgmode.org/list/",
+			"if you have links to the public inbox archive of the emacs-orgmode mail list",
+			"in your notes.",
+			"\n",
+			"Newline or space separated list.",
+		],
+		parent: "burl",
+	});
+}
+
+async function orcoAddColumn() {
+	browser.cucolapi.add(
+		{
+			// Unicorn emoji
+			id: "orgCol", label: "\u{1F984}", tooltip: "Sort by mention in Org",
+			fixed: true,
+			mapping: {
+				valueType: "text",
+				field: "messageId",
+				display: {
+					[gOrcoB.TRUE_VALUE]: "\u{1F984}"
+				},
+			},
+		},
+	);
+}
+
+async function orcoRefresh(lock) {
+	const [map, set] = await gOrcoB.backend.getLinkSet(null, lock);
+	gOrcoB.map = map;
+	const trueValue = gOrcoB.TRUE_VALUE;
+	const orgCol = [];
+	for (const id of set) {
+		orgCol.push([id, trueValue]);
+	}
+	await browser.cucolapi.updateData({ orgCol } );
+}
+
+function orcoInitPubSub() {
+	gOrcoB.pubsub = new OrcoPubSubService();
+	browser.runtime.onConnect.addListener(gOrcoB.pubsub.onConnect);
+}
+
+function orcoInitMenuHandler() {
+	gOrcoB.mentions = new OrcoMentions(gOrcoB.MAX_MENTIONS_MESSAGES);
+	browser.menus.onClicked.addListener(
+		function orcoMenusListner(info, tab) {
+			if (info?.menuItemId !== "ORCO_MENTIONS") {
+				throw new Error(`Unsupported menu entry "${info?.menuItemId}"`);
+			}
+			// TODO log error
+			gOrcoB.mentions.storeMenusContext(info, tab);
+		});
+}
+
+function orcoRegisterPopupSubscription() {
+	const server = gOrcoB.popupSubscription =
+		new OrcoSubscriptionHandler(browser.runtime.id);
+	server.register("orco", {
+		async settings() {
+			await browser.runtime.openOptionsPage();
+		},
+		async refresh(msg) {
+			await gOrcoB.singleTask.run(
+				{ id: msg.id, ...(msg.params || {}) },
+				lock => orcoRefresh(lock));
+		},
+		async mentions(msg, port) {
+			if (!(msg.params?.messageIDs?.length > 0)) {
+				throw new Error("No Message-ID list to check");
+			}
+			const { messageIDs, ...other } = msg.params;
+			// TODO LRU cache in OrcoMentions
+			const response = await gOrcoB.singleTask.run(
+				{ id: msg.id, ...other },
+				lock => gOrcoB.backend.mentions({ messageIDs, map: gOrcoB.map, }, lock));
+			await port.postMessage({
+				id: msg.id, method: "orco.mentionsResponse",
+				params: response,
+			});
+		},
+		async visit(msg, port) {
+			const { messageIDs, path, lineNo, ...other } = msg.params;
+			const response = await gOrcoB.singleTask.run(
+				{ id: msg.id, other },
+				lock => gOrcoB.backend.visit({ path, lineNo }, lock));
+		},
+		logClear() {
+			con.debug("popup pub/sub: orco.logClear: not implemented"); // TODO
+		},
+	});
+	server.register("task", {
+		abort() { gOrcoB.singleTask.abort(); },
+	});
+	const addSource = gOrcoB.pubsub.register("popupNotifications", server);
+	addSource(gOrcoB.singleTask.eventSource);
+	addSource(gOrcoB.mentions.eventSource);
+}
+
+function orcoRegisterSettignsSubscription() {
+	const server = gOrcoB.settingsSubscription =
+		new OrcoSubscriptionHandler(browser.runtime.id);
+	const eventSource = new OrcoPubEventSource(function* orcoSettingsPubSubGreet() {
+		yield { method: "settings.descriptors", params: gOrcoB.addonSettings.getDescriptors(), };
+	});
+	server.register("settings", {
+		async change(msg) {
+			const diff = await gOrcoB.addonSettings.update(msg.params);
+			// TODO Emit event from `LrSettigs._changeListener()`.
+			if (msg.params?.[1]) {
+				eventSource.notify({
+					method: "settings.reload",
+					id: msg.id,
+				});
+			} else {
+				eventSource.notify({
+					method: "settings.update",
+					params: diff,
+					id: msg.id,
+				});
+			}
+		}
+	});
+	const addSource = gOrcoB.pubsub.register("settings", server);
+	addSource(eventSource);
+}
+
+async function orcoCreateMenu() {
+	await browser.menus.removeAll();
+	function orcoOnMenusCreated() {
+		const error = browser.runtime.lastError;
+		if (error) {
+			con.error("menus create error: %o", error);
+		}
+	}
+	browser.menus.create({
+		contexts: [ "message_list" ],
+		id: "ORCO_MENTIONS",
+		title: browser.i18n.getMessage("cmdMentions"),
+		command: "_execute_browser_action",
+	}, orcoOnMenusCreated);
+}
+
+function orcoSyncMain() {
+	const initializers = [
+		orcoRegisterSettings,
+		orcoInitMenuHandler,
+		orcoInitPubSub,
+		orcoRegisterPopupSubscription,
+		orcoRegisterSettignsSubscription,
+	];
+	for (const func of initializers) {
+		try {
+			func();
+		} catch (ex) {
+			// FIXME to log accessible from the popup
+			con.error(" sync main: %o: %o", func.name, ex);
+		}
+	}
+}
+
+async function orcoAsyncMain() {
+	await gOrcoB.addonSettings.initAsync();
+	const initializers = [
+		orcoAddColumn,
+		orcoCreateMenu,
+	];
+	for (const func of initializers) {
+		try {
+			await func();
+		} catch (ex) {
+			// FIXME to log accessible from the popup
+			con.error("async main: %o: %o", func, ex);
+		}
+	}
+	const backendSettings = new OrcoBackendSettings(gOrcoB);
+	gOrcoB.backend = new OrcoBurlBackend(backendSettings);
+	// TODO fetch data only if a column is really added
+	// - a class that communicate with native messaging application
+	// - a class that fetches settings and run the task through SingleTask
+	// FIXME avoid duplicated error reports
+	gOrcoB.singleTask.run({ topic: "Load" }, lock => orcoRefresh(lock));
+	con.debug("loaded");
+}
+
+orcoSyncMain();
+orcoAsyncMain();

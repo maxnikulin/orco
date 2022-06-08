@@ -1,0 +1,72 @@
+{
+	"manifest_version": 2,
+	"name": "__MSG_orcoAddonName__",
+	"version": "0.2",
+	"version_name": "0.2 (pre-relase, test of updates)",
+	"default_locale": "en",
+	"description": "__MSG_orcoAddonDescription__",
+	"author": "__MSG_orcoAddonAuthor__",
+	"homepage_url": "https://github.com/maxnikulin/orco",
+	"icons": {
+		"16": "icons/orco-16.png",
+		"32": "icons/orco-32.png",
+		"128": "icons/orco-128.png"
+	},
+	"background": {
+		"scripts": [
+			"mwel/common/mwel_console.js",
+			"orco_bg/init_orco.js",
+			"mwel/common/mwel_common.js",
+			"lrlib/common/lr_multimap.js",
+			"lrlib/background/lr_settings.js",
+			"lrlib/background/lr_native_connection.js",
+			"orco_common/orco_common.js",
+			"orco_bg/orco_pubsub.js",
+			"orco_bg/orco_single_task.js",
+			"orco_bg/orco_burl.js",
+			"mtwel/background/mtwel_msg_selection.js",
+			"orco_bg/orco_mentions.js",
+			"orco_bg/main_orco.js"
+		]
+	},
+	"browser_action": {
+		"browser_style": true,
+		"default_title": "__MSG_browserActionTitle__",
+		"default_popup": "orco_pages/orcop_popup.html",
+		"default_label": "",
+		"default_icon": {
+			"16": "icons/orco-16.png",
+			"32": "icons/orco-32.png",
+			"128": "icons/orco-128.png"
+		}
+	},
+	"options_ui": {
+		"page": "orco_pages/orcop_options.html",
+		"browser_style": true
+	},
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "orco@maxnikulin.github.io",
+			"strict_min_version": "91.0",
+			"update_url": "https://raw.githubusercontent.com/maxnikulin/orco/release/updates/updates.json"
+		}
+	},
+	"permissions": [
+		"nativeMessaging", "menus", "storage",
+		"messagesRead"
+	],
+	"experiment_apis": {
+		"cucolapi": {
+			"schema": "cucolapi/experiment/cucolapi.json",
+			"parent": {
+				"scopes": [
+					"addon_parent"
+				],
+				"paths": [
+					[ "cucolapi" ]
+				],
+				"script": "cucolapi/experiment/cucolapi.js"
+			}
+		}
+	}
+}

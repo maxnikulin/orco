@@ -1,0 +1,22 @@
+{
+	"orcoAddonName": {
+		"message": "orco",
+		"title": "Extension name as displayed in \"Add-ons and Themes\" tab, in the extension catalog, and maybe as combined context menu item, in URL bar for add-on pages. Notice that \"short_name\" key is mostly ignored, so this one should be short"
+	},
+	"orcoAddonDescription": {
+		"message": "A column to mark messages mentioned in Org Mode files.\nRequires install of a native messaging helper.",
+		"title": "Extension description"
+	},
+	"orcoAddonAuthor": {
+		"message": "Max Nikulin",
+		"description": "Author of the extension"
+	},
+	"browserActionTitle": {
+		"message": "orco",
+		"title": "Title for the browser action toolbar button"
+	},
+	"cmdMentions": {
+		"message": "orco Me&ntions",
+		"title": "Message list context menu entry to check mentions and show them in the browser action popup"
+	}
+}
