@@ -71,7 +71,7 @@ from the releases section of the GitHub project
 and use "install from file" option in the add-on management tab.
 Alternatively a repository clone may be loaded as a temporary extension
 from the add-on debugging tab. Thunderbird removes column state from
-folder views when temporary add-on is not loaded, so it may be inconvenient..
+folder views when temporary add-on is not loaded, so it may be inconvenient.
 A new toolbar button should appear in the mail tabs.
 Right click on message list header should reveal new column
 that may be added to the folder view.
@@ -86,7 +86,7 @@ and for the
 [[https://github.com/maxnikulin/linkremark][LinkRemark browser extension]].
 
 If you have installed bURL earlier for LinkRemark, update it to the latest
-release.  As to configuration, it should be enough
+release (bURL-0.4 or later is required).  As to configuration, it should be enough
 to add =orco@maxnikulin.github.io= the =allowed_extensions= array
 in the native application manifest.  The latter is located in
 =~/.mozilla/native-messaging-hosts=.  If you use =news:= or =nntp:= links
@@ -188,9 +188,7 @@ For native messaging backend problems see the related section in Mozilla
 orco is published under [[https://www.gnu.org/licenses/gpl-3.0.html][the GNU GPLv3 license]] or any later
 version. See the [[file:LICENSE.txt]] file in this directory.
 
-#+begin_center
 #+attr_html: :alt orco icon
 [[file:icons/orco-128.png]]
-#+end_center
 
 # LocalWords: LinkRemark Thunderbird bURL backend orco
