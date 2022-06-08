@@ -5,6 +5,7 @@
 				"version": "0.2",
 				"update_link": "https://github.com/maxnikulin/orco/releases/download/v0.2/orco-0.2-unsigned.xpi",
 				"update_info_url": "https://raw.githubusercontent.com/maxnikulin/orco/release/updates/orco-release-notes-0.2.html",
+				"update_hash": "sha256:b3bb9fe0e3d176b9bfc6375339456d167627f5c538ea80087ee1cbc91e1f103b",
 				"applications": {
 					"gecko": { "strict_min_version": "91.0" }
 				}
@@ -12,6 +13,7 @@
 				"version": "0.2.1",
 				"update_link": "https://github.com/maxnikulin/orco/releases/download/v0.2.1/orco-0.2.1-unsigned.xpi",
 				"update_info_url": "https://raw.githubusercontent.com/maxnikulin/orco/release/updates/orco-release-notes-0.2.1.html",
+				"update_hash": "sha256:d479d844a6079d28230679bcb9d7c4511650971f06629049839f244fb950645d",
 				"applications": {
 					"gecko": { "strict_min_version": "91.0" }
 				}
