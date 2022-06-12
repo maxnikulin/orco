@@ -20,27 +20,68 @@
 var mtwel_msg_selection = function mtwel_msg_selection_load() {
 	const mtwel_msg_selection = this;
 
-	mtwel_msg_selection.getActiveTab = async function getActiveTab(tab) {
+	/** Selection of multiple tabs is not supported in Thunderbird-91
+	 * Tabs are implemented in a quite peculiar way:
+	 * https://bugzilla.mozilla.org/487386
+	 * "tabs don't maintain exactly what was shown when" 2009
+	 * https://bugzilla.mozilla.org/1758243
+	 * "Move message to new window creates spurious tab with folder list" 2022
+	 */
+	mtwel_msg_selection.getHighlightedMailTabIds = async function getHighlightedMailTabIds(tab) {
 		if (tab != null) {
 			if (typeof tab === "number") {
-				return await browser.tabs.get(tab);
+				return [ tab ];
 			}
-			return tab;
+			const tabId = tab?.id;
+			if (tabId != null) {
+				return [ tabId ];
+			}
 		}
-		const currentTab = await browser.tabs.getCurrent();
-		if (currentTab) {
-			return currentTab;
+		// The following does not work from the backgrownd page or an action popup:
+		//     const currentTab = await browser.tabs.getCurrent();
+
+		function _filterMailTabs(tabs) {
+			if (tabs == null || !(tabs.length > 0)) {
+				return undefined;
+			}
+			tabs = tabs.filter(t => t.type === "messageDisplay" || t.type === "mailTab");
+			return tabs.length > 0 ? tabs.map(t => t.id) : undefined;
 		}
-		const candidates = await browser.mailTabs.query({
-			active: true, currentWindow: true,
-		});
-		if (!candidates || !(candidates.length > 0)) {
+
+		// Thunderbird-91 reports unexpected error for `{ highlighted: true }`:
+		//     Not implemented ext-tabs-base.js:1193
+		//         getHighlightedTabs chrome://extensions/content/parent/ext-tabs-base.js:1193
+		// so actually `{ active: true }`
+		async function _query(params) {
+			for (const selector of [ { highlighted: true }, { active: true } ]) {
+				try {
+					return await browser.tabs.query({ ...params, ...selector });
+				} catch (ex) {
+					console.error("mtwel_msg_selection.getHighlightedMailTabIds: ignored error", ex);
+				}
+			}
+			return undefined;
+		}
+
+		function _toIds(mailTabs) {
+			if (mailTabs == null || !(mailTabs.length > 0)) {
+				return undefined;
+			}
+			return mailTabs.map(t => t.id);
+		}
+
+		let tabs = _filterMailTabs(await _query({ currentWindow: true })) ??
+			_filterMailTabs(await _query({ lastFocusedWindow: true })) ??
+			// Likely never used, it is fallback because it
+			// ignores `{ type: "messageDisplay" }` tabs
+			// and `{ highlighted: true }` option is not supported.
+			_toIds(await browser.mailTabs.query(
+				{ active: true, currentWindow: true, }));
+
+		if (tabs == null) {
 			throw new Error("No active tab");
 		}
-		if (candidates.length > 1) {
-			console.warn("mtwel_msg_selection.getActiveTab: non-unique active tab %o", candidates);
-		}
-		return (await browser.tabs.get(candidates[0].id)) || candidates[0];
+		return tabs;
 	};
 
 	mtwel_msg_selection.getMessageHeaderArray = async function getMessageHeaderArray(info, tab) {
@@ -50,37 +91,48 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 			return selectedMessages;
 		}
 
-		tab = await mtwel_msg_selection.getActiveTab(tab);
-
 		// info.tabId - messageDisplayAction
-		const tabId = info?.tabId ?? tab?.id;
-		if (tabId == null) {
+		const argTabId = info?.tabId ?? tab?.id;
+		let tabIdArray = argTabId != null ?
+			[ argTabId ] :
+			await mtwel_msg_selection.getHighlightedMailTabIds(tab);
+
+		if (tabIdArray == null) {
 			throw new Error("Tab unknown, message list unavailable");
 		}
-		if (browser.messageDisplay?.getDisplayedMessages) {
-			// TB 78.4
-			selectedMessages = await browser.messageDisplay.getDisplayedMessages(tabId);
-			if (selectedMessages?.length > 0) {
-				return selectedMessages;
+		const retval = [];
+		for (const tabId of tabIdArray) {
+			if (browser.messageDisplay?.getDisplayedMessages) {
+				// TB 78.4
+				selectedMessages = await browser.messageDisplay.getDisplayedMessages(tabId);
+				if (selectedMessages?.length > 0) {
+					retval.push(...selectedMessages);
+					continue
+				}
+			}
+			let message = await browser.messageDisplay?.getDisplayedMessage(tabId);
+			if (message) {
+				retval.push(message);
+			}
+			try {
+				selectedMessages = await browser.mailTabs.getSelectedMessages?.(tabId);
+				if (selectedMessages?.messages?.length > 0) {
+					retval.push(...selectedMessages.messages);
+					continue;
+				}
+			} catch (ex) {
+				// A thunderbird bug: exception when no folder is selected.
+				console.error("mtwel_msg_selection.getMessageHeaderArray: browser.mailTabs.getSelectedMessages:", ex);
 			}
 		}
-		let message = await browser.messageDisplay?.getDisplayedMessage(tabId);
-		if (message) {
-			return [message];
-		}
-		try {
-			selectedMessages = await browser.mailTabs.getSelectedMessages?.(tabId);
-			if (selectedMessages?.messages?.length > 0) {
-				return selectedMessages.messages;
-			}
-		} catch (ex) {
-			// A thunderbird bug: exception when no folder is selected.
-			console.error("mtwel_msg_selection.getMessageHeaderArray: browser.mailTabs.getSelectedMessages:", ex);
-		}
-		if (browser.messageDisplay == null && browser.mailTabs.getSelectedMessages == null) {
+		if (
+			!(retval.length > 0) &&
+			browser.messageDisplay == null &&
+			browser.mailTabs.getSelectedMessages == null
+		) {
 			throw new Error("No messagesRead permission");
 		}
-		return [];
+		return retval;
 	};
 
 	return mtwel_msg_selection;
