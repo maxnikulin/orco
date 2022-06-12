@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
 	"name": "__MSG_orcoAddonName__",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"default_locale": "en",
 	"description": "__MSG_orcoAddonDescription__",
 	"author": "__MSG_orcoAddonAuthor__",
