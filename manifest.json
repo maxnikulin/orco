@@ -23,6 +23,7 @@
 			"orco_bg/orco_pubsub.js",
 			"orco_bg/orco_single_task.js",
 			"orco_bg/orco_burl.js",
+			"mtwel/background/mtwel_util.js",
 			"mtwel/background/mtwel_msg_selection.js",
 			"orco_bg/orco_mentions.js",
 			"orco_bg/main_orco.js"
@@ -33,6 +34,16 @@
 		"default_title": "__MSG_browserActionTitle__",
 		"default_popup": "orco_pages/orcop_popup.html",
 		"default_label": "",
+		"default_icon": {
+			"16": "icons/orco-16.png",
+			"32": "icons/orco-32.png",
+			"128": "icons/orco-128.png"
+		}
+	},
+	"message_display_action": {
+		"browser_style": true,
+		"default_title": "__MSG_browserActionTitle__",
+		"default_popup": "orco_pages/orcop_popup.html",
 		"default_icon": {
 			"16": "icons/orco-16.png",
 			"32": "icons/orco-32.png",

@@ -222,6 +222,61 @@ function orcoRegisterSettignsSubscription() {
 	addSource(eventSource);
 }
 
+function orcoEnableMessageDisplayAction(win) {
+	if (win.type !== "messageDisplay") {
+		con.debug("orcoEnableMessageDisplayAction: ignore window", win);
+		return;
+	}
+	console.assert(win?.tabs?.length === 1, "messageDisplay window has 1 tab", win);
+	if (win.tabs == null) {
+		return;
+	}
+	for (const tab of win.tabs) {
+		const tabId = tab.id;
+		if (tabId == null) {
+			con.warn("tab.id is null", tab, win);
+			continue;
+		}
+		browser.messageDisplayAction.enable(tabId);
+	}
+}
+
+function orcoOnWindowCreated(win) {
+	if (win.type !== "messageDisplay") {
+		con.debug("orcoOnWindowCreated: ignore window", win);
+		return;
+	}
+	browser.windows.get(win.id, { populate: true })
+		.then(orcoEnableMessageDisplayAction);
+	// TODO try-catch and report error to background logger
+}
+
+async function orcoDisableMessageDisplayAction(win) {
+	browser.messageDisplayAction.disable();
+	const messageWindows = await browser.windows.getAll(
+		{ windowTypes: ["messageDisplay"], populate: true });
+	browser.windows.onCreated.addListener(orcoOnWindowCreated);
+	const errors = [];
+	for (const win of messageWindows) {
+		try {
+			orcoEnableMessageDisplayAction(win);
+		} catch (ex) {
+			con.error(ex);
+			errors.push(ex);
+		}
+	}
+	switch (errors.length) {
+		case 0:
+			break;
+		case 1:
+			throw errors[0];
+			break;
+		default:
+			throw new AggregateError(errors, "Failed to enable messageDisplayAction");
+			break;
+	}
+}
+
 async function orcoCreateMenu() {
 	await browser.menus.removeAll();
 	function orcoOnMenusCreated() {
@@ -260,6 +315,7 @@ async function orcoAsyncMain() {
 	await gOrcoB.addonSettings.initAsync();
 	const initializers = [
 		orcoAddColumn,
+		orcoDisableMessageDisplayAction,
 		orcoCreateMenu,
 	];
 	for (const func of initializers) {

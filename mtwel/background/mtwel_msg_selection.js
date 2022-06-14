@@ -37,31 +37,6 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 				return [ tabId ];
 			}
 		}
-		// The following does not work from the backgrownd page or an action popup:
-		//     const currentTab = await browser.tabs.getCurrent();
-
-		function _filterMailTabs(tabs) {
-			if (tabs == null || !(tabs.length > 0)) {
-				return undefined;
-			}
-			tabs = tabs.filter(t => t.type === "messageDisplay" || t.type === "mailTab");
-			return tabs.length > 0 ? tabs.map(t => t.id) : undefined;
-		}
-
-		// Thunderbird-91 reports unexpected error for `{ highlighted: true }`:
-		//     Not implemented ext-tabs-base.js:1193
-		//         getHighlightedTabs chrome://extensions/content/parent/ext-tabs-base.js:1193
-		// so actually `{ active: true }`
-		async function _query(params) {
-			for (const selector of [ { highlighted: true }, { active: true } ]) {
-				try {
-					return await browser.tabs.query({ ...params, ...selector });
-				} catch (ex) {
-					console.error("mtwel_msg_selection.getHighlightedMailTabIds: ignored error", ex);
-				}
-			}
-			return undefined;
-		}
 
 		function _toIds(mailTabs) {
 			if (mailTabs == null || !(mailTabs.length > 0)) {
@@ -70,8 +45,7 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 			return mailTabs.map(t => t.id);
 		}
 
-		let tabs = _filterMailTabs(await _query({ currentWindow: true })) ??
-			_filterMailTabs(await _query({ lastFocusedWindow: true })) ??
+		const tabs = _toIds(await mtwel_util.getHighlightedMailTabs()) ??
 			// Likely never used, it is fallback because it
 			// ignores `{ type: "messageDisplay" }` tabs
 			// and `{ highlighted: true }` option is not supported.
