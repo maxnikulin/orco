@@ -95,7 +95,9 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 					continue;
 				}
 			} catch (ex) {
-				// A thunderbird bug: exception when no folder is selected.
+				// A thunderbird bug (91, 103): exception when no folder is selected.
+				// https://bugzilla.mozilla.org/1773972
+				// "mailTabs.getSelectedMessages: Error: An unexpected error occurred"
 				console.error("mtwel_msg_selection.getMessageHeaderArray: browser.mailTabs.getSelectedMessages:", ex);
 			}
 		}
