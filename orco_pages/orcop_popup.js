@@ -194,13 +194,18 @@ var orcopActionHandlers = {
 		orcopPopupSwitchPage(link || "page_mentions");
 	},
 	mentionsRefresh() {
-		const messageIDs = gOrcoP.selection?.messages?.map(m => m.messageID);
-		if (messageIDs) {
-			orcopPopupStartTask("orco.mentions", {
-				topic: "Mentions",
-				messageIDs,
-			});
+		if (gOrcoP.selection == null) {
+			return;
 		}
+		const messages = gOrcoP.selection.messages?.map(m => 'mid:' + m.messageID);
+		const content = gOrcoP.selection.content?.URLs?.map(u => u.url);
+		if (messages === undefined && content === undefined) {
+			return;
+		}
+		orcopPopupStartTask("orco.mentions", {
+			topic: "Mentions",
+			URLs: [ ...(messages || []), ...(content || []), ],
+		});
 	},
 	visit(link) {
 		const path = link.dataset.orcoPath;

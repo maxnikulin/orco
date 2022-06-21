@@ -161,17 +161,32 @@ class OrcoBurlBackend extends OrcoBurlBackendBase {
 	}
 	async _doMentions(params, lock) {
 		// { variants: [], options: [ countLimit ] }
-		const { messageIDs, prefix = this.prefix, map } = params;
+		const { URLs, prefix = this.prefix, map } = params;
 		const mentions = [];
 		const errors = [];
 		const connection = this._connection(lock);
 		try {
-			for (const mid of messageIDs) {
+			const seen = new Set();
+			for (const url of URLs || []) {
 				try {
-					const variants = orco_burl.linksFromMap(map, mid, prefix);
-					mentions.push([mid, await connection.send("burl.urlMentions", { variants })]);
+					const variants = (
+						url.startsWith("mid:") ?
+						orco_burl.linksFromMap(map, url.substring(4), prefix) :
+						[ url ]
+					).filter(v => {
+							if (seen.has(v)) {
+								return false;
+							} else {
+								seen.add(v);
+								return true;
+							}
+						});
+					if (!(variants.length > 0)) {
+						continue;
+					}
+					mentions.push([url, await connection.send("burl.urlMentions", { variants })]);
 				} catch (ex) {
-					console.error("OrcoBurlBackend.mentions: error", mid, ex);
+					console.error("OrcoBurlBackend.mentions: error", url, ex);
 					// TODO save in background logger
 					errors.push(orco_common.errorDescription(ex));
 				}

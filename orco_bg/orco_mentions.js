@@ -31,7 +31,52 @@ class OrcoMentions {
 		this._menusContext.userAction = true;
 	}
 	async _getMenusContext(clickData, tab) {
+		const schemeRegExp = /^(?:[a-z][a-z0-9]*(?:[-+][a-z0-9]+)*):/i;
 		const retval = { ts: Date.now() };
+		try {
+			if (clickData != null) {
+				let selection;
+				// Avoid duplicates like `linkUrl === linkText`
+				const stored = new Set();
+				for (const field of ['linkUrl', 'srcUrl', 'pageUrl', 'frameUrl', 'linkText', 'selectionText']) {
+					const value = clickData[field];
+					if (value == null || value == "" || stored.has(value)) {
+						continue;
+					}
+					selection = selection || {};
+					stored.add(value);
+					if (field === 'selectionText') {
+						selection[field] = value;
+						continue;
+					}
+					// `pageUrl` is `mailbox:` URL even for RSS articles in 3 pane window
+					if (field === 'pageUrl' && value.startsWith('mailbox:')) {
+						continue;
+					}
+					selection.URLs = selection.URLs || [];
+					selection.URLs.push({ url: value, source: field });
+					// TODO is it reasonable to use real prefix regexp here?
+					// TODO move `extractMessageID` from `orco_burl` to a more generic library.
+					const midRaw = orco_burl.extractMessageID(schemeRegExp, value);
+					const mid = midRaw && 'mid:' + midRaw;
+					if (midRaw === undefined || stored.has(mid)) {
+						continue;
+					}
+					stored.add(mid)
+					selection.URLs.push({ url: mid, source: field });
+				}
+				if (selection !== undefined) {
+					retval.content = selection;
+				}
+			}
+		} catch (ex) {
+			console.error(ex);
+			// TODO make error an Array or send to background logger
+			retval.error = retval.error || {
+				message: String(ex.message || ex),
+				type: Object.getPrototypeOf(ex)?.constructor?.name || "Unknown error",
+			};
+		}
 		try {
 			const messages = await mtwel_msg_selection.getMessageHeaderArray(clickData, tab);
 			const max = this.maxMessages;
@@ -51,7 +96,8 @@ class OrcoMentions {
 			}
 		} catch (ex) {
 			console.error(ex);
-			retval.error = {
+			// TODO make error an Array
+			retval.error = retval.error || {
 				message: String(ex.message || ex),
 				type: Object.getPrototypeOf(ex)?.constructor?.name || "Unknown error",
 			};

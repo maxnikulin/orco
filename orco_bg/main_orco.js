@@ -163,14 +163,14 @@ function orcoRegisterPopupSubscription() {
 				lock => orcoRefresh(lock));
 		},
 		async mentions(msg, port) {
-			if (!(msg.params?.messageIDs?.length > 0)) {
+			if (!(msg.params?.URLs?.length > 0)) {
 				throw new Error("No Message-ID list to check");
 			}
-			const { messageIDs, ...other } = msg.params;
+			const { URLs, ...other } = msg.params;
 			// TODO LRU cache in OrcoMentions
 			const response = await gOrcoB.singleTask.run(
 				{ id: msg.id, ...other },
-				lock => gOrcoB.backend.mentions({ messageIDs, map: gOrcoB.map, }, lock));
+				lock => gOrcoB.backend.mentions({ URLs, map: gOrcoB.map, }, lock));
 			await port.postMessage({
 				id: msg.id, method: "orco.mentionsResponse",
 				params: response,
@@ -286,7 +286,9 @@ async function orcoCreateMenu() {
 		}
 	}
 	browser.menus.create({
-		contexts: [ "message_list" ],
+		// Ignore `folder_pane` included into `all`.
+		// Unsure if `editable` and `password` should be added.
+		contexts: [ "message_list", "page", "frame", "selection", "link", "image", "video", "audio", ],
 		id: "ORCO_MENTIONS",
 		title: browser.i18n.getMessage("cmdMentions"),
 		command: "_execute_browser_action",
