@@ -157,6 +157,16 @@ function orcoInitMenuHandler() {
 			browser.messageDisplayAction.openPopup();
 			browser.browserAction.openPopup();
 		});
+	// `_execute_browser_action` can not be used in manifest.
+	browser.commands.onCommand.addListener(
+		function orcoCommandsListener(command, tab) {
+			if (command !== "orco-mentions") {
+				throw new Error(`Unsupported command "${command}"`);
+			}
+			gOrcoB.mentions.storeMenusContext(undefined, tab);
+			browser.messageDisplayAction.openPopup();
+			browser.browserAction.openPopup();
+		});
 }
 
 function orcoRegisterPopupSubscription() {
@@ -299,7 +309,7 @@ async function orcoCreateMenu() {
 		// Unsure if `editable` and `password` should be added.
 		contexts: [ "message_list", "page", "frame", "selection", "link", "image", "video", "audio", ],
 		id: "ORCO_MENTIONS",
-		title: browser.i18n.getMessage("cmdMentions"),
+		title: browser.i18n.getMessage("menuMentions"),
 		// `command: "_execute_browser_action"`, a Mozilla extension,
 		// can not be used here since `messageDisplay` windows
 		// do not have `browserAction`, so `messageDisplayAction` is used there.

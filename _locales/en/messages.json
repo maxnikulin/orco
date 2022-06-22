@@ -15,8 +15,12 @@
 		"message": "orco",
 		"title": "Title for the browser action toolbar button"
 	},
-	"cmdMentions": {
+	"menuMentions": {
 		"message": "orco Me&ntions",
-		"title": "Message list context menu entry to check mentions and show them in the browser action popup"
+		"title": "Context menu entry to check mentions and show them in the browser action popup"
+	},
+	"cmdMentions": {
+		"message": "orco Mentions",
+		"title": "Command name, an entry in shortcut list (add-on management). Should not contain accelerator key mark."
 	}
 }

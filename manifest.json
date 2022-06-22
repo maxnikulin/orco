@@ -50,6 +50,11 @@
 			"128": "icons/orco-128.png"
 		}
 	},
+	"commands": {
+		"orco-mentions": {
+			"description": "__MSG_cmdMentions__"
+		}
+	},
 	"options_ui": {
 		"page": "orco_pages/orcop_options.html",
 		"browser_style": true
