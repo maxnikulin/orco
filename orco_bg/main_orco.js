@@ -145,8 +145,17 @@ function orcoInitMenuHandler() {
 			if (info?.menuItemId !== "ORCO_MENTIONS") {
 				throw new Error(`Unsupported menu entry "${info?.menuItemId}"`);
 			}
-			// TODO log error
+			// TODO log error, notice no `await` despite calls of `async` functions.
 			gOrcoB.mentions.storeMenusContext(info, tab);
+			// For Chrome `openPopup` is supported only for `action` API since manifest v3.
+			// `openPopup` must be executed from user action context,
+			// so no `await` is allowed before.
+			// There is no `browser_action` in `messageDisplay` windows,
+			// so `command` as menu item action is not possible.
+			// https://bugzilla.mozilla.org/1775246
+			// "browserAction buttons missed in messageDisplay windows"
+			browser.messageDisplayAction.openPopup();
+			browser.browserAction.openPopup();
 		});
 }
 
@@ -291,7 +300,14 @@ async function orcoCreateMenu() {
 		contexts: [ "message_list", "page", "frame", "selection", "link", "image", "video", "audio", ],
 		id: "ORCO_MENTIONS",
 		title: browser.i18n.getMessage("cmdMentions"),
-		command: "_execute_browser_action",
+		// `command: "_execute_browser_action"`, a Mozilla extension,
+		// can not be used here since `messageDisplay` windows
+		// do not have `browserAction`, so `messageDisplayAction` is used there.
+		// Approach like `menus.refresh()` (expensive, so discouraged)
+		// might be used for switching between visibility of 2 menu items
+		// unless there is some problem due to `async` functions necessary to
+		// determine window type. Notice that `menus.update` can not be used
+		// to change `command`.
 	}, orcoOnMenusCreated);
 }
 
