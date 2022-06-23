@@ -116,15 +116,23 @@ function orcopRenderMentions(mentionsResult) {
 }
 
 function orcopSetMentionsSelection(params) {
-	if (params == null && !(params.error || params.messages)) {
+	if (params == null || !(params.error || params.messages || params.content)) {
 		throw new Error("Invalid message: selection");
 	}
 	gOrcoP.selection = params;
 	try {
 		if (params.error) {
-			// No reason to report it to the log ring.
+			// Error may be partial: successful selection but failed messages.
+			orcopPopupError(params.error);
+		}
+	} catch (ex) {
+		console.error("orcopSetMentionsSelection: exception while reporting error", ex);
+	}
+	try {
+		if (params.error) {
 			orcopSetMentionsText("Mentions: error: " + params.error.message);
-		} else if (params.messages?.length > 0) {
+		}
+		if (params.messages?.length > 0) {
 			const first = params.messages[0];
 			const parts = [first.from, first.to, first.subject];
 			const date = first.date;
