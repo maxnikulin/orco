@@ -43,6 +43,7 @@ a.panel-list-item > .text-shortcut {
 .mentions {
 	height: 20em;
 	padding-inline: 8px;
+	overflow: auto;
 }
 .log-list {
 	max-height: 20em;
