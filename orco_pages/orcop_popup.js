@@ -144,9 +144,24 @@ function orcopSetMentionsSelection(params) {
 			parts.unshift(len > 1 ? "for " + len + ":" : "for:");
 			parts.unshift("Mentions");
 			orcopSetMentionsText(parts.filter(p => p != null && p !== "").join(" "));
+		} else if (params.content != null) {
+			const parts = [ "Selection:" ];
+			const selection = params.content;
+			const length = selection.URLs?.length;
+			if (length > 0) {
+				parts.push(selection.URLs[0].url);
+			}
+			if (length > 1) {
+				parts.push("+" + (length - 1));
+			}
+			const text = selection.selectionText;
+			if (text != null && text !== "") {
+				parts.push(text.substring(0, 40));
+			}
+			orcopSetMentionsText(parts.join(" "));
 		} else if (params.messages?.length === 0) {
 			orcopSetMentionsText("No messages selected");
-		} else {
+		} else if (params.error == null) {
 			console.warn("orcopSetMentionsSelection: neither messages no error is set");
 			orcopSetMentionsText("Mentions: internal error");
 		}
