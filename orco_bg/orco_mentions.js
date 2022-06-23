@@ -22,6 +22,11 @@ class OrcoMentions {
 	// is undefined. Wait to avoid race.
 	get CONTEXT_MENUS_PAUSE() { return 100; }
 
+	// Timeout to discard selection stored for context menu action
+	// if popup failed and next time popup opened by direct click on
+	// `browserAction` or `messageDisplayAction`.
+	get SELECTION_EXPIRE() { return 500; }
+
 	constructor(maxMessages = 4) {
 		this.eventSource = new OrcoPubEventSource(this._greet.bind(this));
 		this.maxMessages = maxMessages;
@@ -107,7 +112,19 @@ class OrcoMentions {
 	async _notifySelection() {
 		const sentry = this._selectionSentry = {};
 		await new Promise(resolve => setTimeout(resolve, this.CONTEXT_MENUS_PAUSE));
-		const ctx = this._menusContext ?? await this._getMenusContext(null, null);
+		if (this._selectionSentry !== sentry) {
+			return;
+		}
+		let ctx = this._menusContext;
+		const now = Date.now();
+		if (ctx?.ts < now - this.SELECTION_EXPIRE) {
+			console.warn(
+				"Discarding stale selection",
+				// log fraction of second
+				new Date(ctx.ts).toISOString(), new Date(now).toISOString());
+			ctx = undefined;
+		}
+		ctx = ctx ?? await this._getMenusContext(null, null);
 		if (this._selectionSentry !== sentry) {
 			return;
 		}
