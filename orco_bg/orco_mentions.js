@@ -36,7 +36,7 @@ class OrcoMentions {
 		this._menusContext.userAction = true;
 	}
 	async _getMenusContext(clickData, tab) {
-		const schemeRegExp = /^(?:[a-z][a-z0-9]*(?:[-+][a-z0-9]+)*):/i;
+		const schemeRegExp = /^(?:[a-z][a-z0-9]*(?:[-+][a-z0-9]+)*):(?:\/\/)?/i;
 		const retval = { ts: Date.now() };
 		try {
 			if (clickData != null) {
@@ -48,26 +48,41 @@ class OrcoMentions {
 					if (value == null || value == "" || stored.has(value)) {
 						continue;
 					}
-					selection = selection || {};
-					stored.add(value);
 					if (field === 'selectionText') {
+						selection = selection || {};
+						stored.add(value);
 						selection[field] = value;
 						continue;
 					}
-					// `pageUrl` is `mailbox:` URL even for RSS articles in 3 pane window
-					if (field === 'pageUrl' && value.startsWith('mailbox:')) {
+					// `pageUrl` is `mailbox:` URL even for RSS articles in 3 pane window,
+					// `news` is internal URI with `?group=...` parameters.
+					if (
+						field === 'pageUrl' &&
+						(value.startsWith('mailbox:') || value.startsWith('news:'))
+					) {
 						continue;
 					}
+					selection = selection || {};
 					selection.URLs = selection.URLs || [];
 					selection.URLs.push({ url: value, source: field });
+					stored.add(value);
+					// Mozilla recognizes implicit links like www.google.com
+					// and email addresses that are rather similar to Message-IDs.
+					// `linkText` unlike `linkURL` in such cases has no scheme
+					// and maybe lack of trailing slash.
+					const withoutScheme = value.replace(schemeRegExp, "");
+					stored.add(withoutScheme);
+					stored.add(withoutScheme.replace(/\/+$/, ""));
 					// TODO is it reasonable to use real prefix regexp here?
 					// TODO move `extractMessageID` from `orco_burl` to a more generic library.
+					// Adding mailto: links as duplicate with mid: is considered as acceptable.
 					const midRaw = orco_burl.extractMessageID(schemeRegExp, value);
 					const mid = midRaw && 'mid:' + midRaw;
 					if (midRaw === undefined || stored.has(mid)) {
 						continue;
 					}
-					stored.add(mid)
+					stored.add(mid);
+					stored.add(midRaw);
 					selection.URLs.push({ url: mid, source: field });
 				}
 				if (selection !== undefined) {
