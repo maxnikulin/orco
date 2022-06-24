@@ -359,8 +359,6 @@ async function orcoAsyncMain() {
 	const backendSettings = new OrcoBackendSettings(gOrcoB);
 	gOrcoB.backend = new OrcoBurlBackend(backendSettings);
 	// TODO fetch data only if a column is really added
-	// - a class that communicate with native messaging application
-	// - a class that fetches settings and run the task through SingleTask
 	// FIXME avoid duplicated error reports
 	gOrcoB.singleTask.run(
 		{ topic: "Load", persistent: "load", },
