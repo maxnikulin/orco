@@ -20,6 +20,21 @@
 var orco_common = function orco_common_load() {
 	const orco_common = this;
 
+	for (
+		const [name, value] of Object.entries({
+			DEBUG: 10,
+			INFO: 30,
+			WARNING: 40,
+			ERROR: 50,
+		})
+	) {
+		Object.defineProperty(orco_common, name, {
+			value,
+			enumerable: true,
+			configurable: true,
+		});
+	}
+
 	orco_common.safeString = function safeString(obj) {
 		if (typeof obj === "string") {
 			return obj;
@@ -46,7 +61,7 @@ var orco_common = function orco_common_load() {
 			// TODO strip first stack entry.
 			error = new Error(error);
 		}
-		const retval = { details: []};
+		const retval = { priorityNum: orco_common.ERROR, details: []};
 		if (error.stack) {
 			retval.details.push(error.stack);
 		}

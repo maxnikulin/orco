@@ -62,7 +62,7 @@ function orcopPopupOnMessage(msg) {
 					for (const error of params.errors) {
 						gOrcoP.logRing.push({
 							id: msg.id,
-							priorityNum: OrcopLogRing.ERROR,
+							priorityNum: orco_common.ERROR,
 							status: "error",
 							...error,
 						});
@@ -81,7 +81,6 @@ function orcopPopupOnMessage(msg) {
 		case "error":
 			gOrcoP.logRing.push({
 				id: msg.id,
-				priorityNum: OrcopLogRing.ERROR,
 				status: "error",
 				...params,
 			});
@@ -183,7 +182,6 @@ function orcopPopupStartTask(method, params) {
 	gOrcoP.port.postMessage({ method, params, id, });
 	gOrcoP.logRing.push({
 		id,
-		priorityNum: OrcopLogRing.INFO,
 		topic: params.topic,
 		status: "starting…",
 	});
@@ -358,7 +356,7 @@ class OrcopLogRing {
 	summary(entry, maxPriorityNum) {
 		if (entry === undefined && !(this.entries.length > 0)) {
 			return {
-				priority: orcopPriorityIcon[OrcopLogRing.INFO],
+				priority: orcopPriorityIcon[orco_common.INFO],
 				message: "Nothing logged yet",
 			};
 		}
@@ -367,14 +365,14 @@ class OrcopLogRing {
 		if (maxPriorityNum === undefined) {
 			maxPriorityNum = priorityNum;
 			for (
-				let i = maxPriorityNum === OrcopLogRing.ERROR ? this.entries.length : 1 ;
+				let i = maxPriorityNum === orco_common.ERROR ? this.entries.length : 1 ;
 				i < this.entries.length;
 				++i
 			) {
 				const p = this.entries[i].priorityNum;
 				if (!(maxPriorityNum >= p)) {
 					maxPriorityNum = p;
-					if (p === OrcopLogRing.ERROR) {
+					if (p === orco_common.ERROR) {
 						break;
 					}
 				}
@@ -399,7 +397,6 @@ class OrcopLogRing {
 		if (props instanceof Error) {
 			props = orco_common.errorDescription(props);
 			props.topic = "Error";
-			props.priorityNum = OrcopLogRing.ERROR;
 		}
 		const iExisting = props.id === undefined ?
 			-1 : this._tasks.findIndex(e => e.id === props.id);
@@ -484,24 +481,17 @@ function orcopLogEntry(entry, task) {
 		props.ts = Date.now();
 	}
 	if (props.priorityNum == null) {
-		props.priorityNum = OrcopLogRing.INFO;
+		props.priorityNum = orco_common.INFO;
 	}
 	return props;
 }
-
-Object.assign(OrcopLogRing, {
-	DEBUG: 10,
-	INFO: 30,
-	WARNING: 40,
-	ERROR: 50,
-});
 
 var orcopPriorityIcon = function() {
 	const map = {};
 	for (const [name, text] of Object.entries({
 		DEBUG: "D", INFO: "\u{2139}" /* info */, WARNING: "\u{26a0}" /* alert */, ERROR: "E",
 	})) {
-		map[OrcopLogRing[name]] = text;
+		map[orco_common[name]] = text;
 	}
 	return map;
 } ();
@@ -511,7 +501,7 @@ var orcopPriorityText = function() {
 	for (const name of [
 		"DEBUG", "INFO", "WARNING", "ERROR",
 	]) {
-		map[OrcopLogRing[name]] = name.toLowerCase();
+		map[orco_common[name]] = name.toLowerCase();
 	}
 	return map;
 } ();
@@ -642,7 +632,7 @@ async function orcopPopupAsyncMain() {
 		gOrcoP.logRing.push(evt.error ?? {
 			topic: "Error", message: evt.message,
 			details: "filename: " + evt.filename,
-			priorityNum: OrcopLogRing.ERROR,
+			priorityNum: orco_error.ERROR,
 		});
 	});
 }
