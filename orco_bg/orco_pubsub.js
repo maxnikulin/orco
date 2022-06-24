@@ -144,6 +144,9 @@ class _OrcoPub {
 	}
 	_onError(ex, request) {
 		con.error("OrcoPubSubService: onMessage error", ex);
+		if (ex.ignorePubSub) {
+			return;
+		}
 		const message = {
 			method: "error",
 			params: orco_common.errorDescription(ex),

@@ -57,11 +57,11 @@ class OrcoSingleTask {
 			return await func({ abortPromise });
 		} catch (ex) {
 			error = ex;
-			// FIXME avoid duplicated error reports
 			throw ex;
 		} finally {
 			if (delete current.reject) {
-				this._update(current, { status: "finish", running: false }, error);
+				const status = error !== undefined ? "error" : "finish";
+				this._update(current, { status, running: false }, error);
 			}
 			if (current !== this._current) {
 				console.error("OrcoSingleTask: finished task is not the current one", current);
@@ -84,6 +84,9 @@ class OrcoSingleTask {
 			Object.assign(status, params, { ts: Date.now(), });
 			task.status.push(status);
 			this.eventSource.notify(this._makeMsg(task, status));
+			if (error !== undefined) {
+				error.ignorePubSub = true;
+			}
 		} catch (ex) {
 			console.error("OrcoSingleTask._update", ex);
 		}
