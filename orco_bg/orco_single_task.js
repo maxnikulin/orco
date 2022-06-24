@@ -28,6 +28,8 @@ class OrcoSingleTask {
 			this.getId = () => "st" + id++;
 		}
 		this._inProgress = 0;
+		// Keep refresh entry, report mentions only to the current popup.
+		this._persistent = new Map();
 		this.eventSource = new OrcoPubEventSource(this._greet.bind(this));
 	}
 	/// `params` should be `{ topic, id }`
@@ -45,12 +47,17 @@ class OrcoSingleTask {
 		let error;
 		try {
 			++this._inProgress;
+			delete this._current?.status[this._current?.status.length - 1]?.running;
 			this._current = current = {
 				status: [],
 				params: (params == null ? {} : { ...params, }),
 			};
 			if (current.params.id == null) {
 				current.params.id = this.getId();
+			}
+			const persistent = params?.persistent;
+			if (persistent !== undefined) {
+				this._persistent.set(persistent, current);
 			}
 			this._update(current, { status: "start", running: true });
 			const abortPromise = new Promise((_resolve, reject) => current.reject = reject);
@@ -78,10 +85,26 @@ class OrcoSingleTask {
 		delete current.reject;
 		this._update(current, { status: "abort", running: false });
 	}
+	clear(params) {
+		this._persistent.clear();
+		if (!this._current.reject) {
+			delete this._current;
+		}
+		const task = {
+			params: {
+				id: (params?.id ?? this.getId()),
+				...( params ?? {} ),
+			},
+			status: [],
+		};
+		this._persistent.set("clear", task);
+		this._update(task, { status: "finish" });
+	}
 	_update(task, params, error) {
 		try {
 			const status = error !== undefined ? orco_common.errorDescription(error) : {};
 			Object.assign(status, params, { ts: Date.now(), });
+			delete task.status[task.status.length - 1]?.running;
 			task.status.push(status);
 			this.eventSource.notify(this._makeMsg(task, status));
 			if (error !== undefined) {
@@ -97,8 +120,13 @@ class OrcoSingleTask {
 		return { method: "task.status", params: { topic, ...status }, id };
 	}
 	*_greet() {
+		for (const task of this._persistent.values()) {
+			for (const status of task.status) {
+				yield this._makeMsg(task, status);
+			}
+		}
 		const task = this._current;
-		if (task) {
+		if (task?.reject !== undefined) {
 			for (const status of task.status) {
 				yield this._makeMsg(task, status);
 			}

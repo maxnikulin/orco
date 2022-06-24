@@ -178,7 +178,7 @@ function orcoRegisterPopupSubscription() {
 		},
 		async refresh(msg) {
 			await gOrcoB.singleTask.run(
-				{ id: msg.id, ...(msg.params || {}) },
+				{ id: msg.id, ...(msg.params || {}), persistent: "load", },
 				lock => orcoRefresh(lock));
 		},
 		async mentions(msg, port) {
@@ -201,8 +201,10 @@ function orcoRegisterPopupSubscription() {
 				{ id: msg.id, other },
 				lock => gOrcoB.backend.visit({ path, lineNo }, lock));
 		},
-		logClear() {
-			con.debug("popup pub/sub: orco.logClear: not implemented"); // TODO
+		logClear(msg) {
+			// TODO background logger for errors that should be cleared as well.
+			const params = msg.params;
+			gOrcoB.singleTask.clear({ id: msg.id, ...(params ?? {}) });
 		},
 	});
 	server.register("task", {
@@ -360,7 +362,9 @@ async function orcoAsyncMain() {
 	// - a class that communicate with native messaging application
 	// - a class that fetches settings and run the task through SingleTask
 	// FIXME avoid duplicated error reports
-	gOrcoB.singleTask.run({ topic: "Load" }, lock => orcoRefresh(lock));
+	gOrcoB.singleTask.run(
+		{ topic: "Load", persistent: "load", },
+		lock => orcoRefresh(lock));
 	con.debug("loaded");
 }
 
