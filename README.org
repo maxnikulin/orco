@@ -20,6 +20,20 @@ an icon for messages when their Message-ID's are mentioned
 in Org files (actually any text files with the same link format).
 #+end_abstract
 
+* orco-0.3.0 highlights
+
+- Context menu entry for message body to check if you have a link
+  in your notes.
+- A shortcut may be configured in add-on manager.
+  Unfortunately it is not the same as context menu item,
+  so =[Shift+F10]= and accelerator key (currently =n=, but I am going
+  to change it to =q= to have less alternative options)
+  may be more convenient.
+
+See <https://github.com/maxnikulin/orco/releases/>
+Already installed add-on should be updated unless it is disabled.
+[2022-06-28 Tue]
+
 * It is an alpha version
 
 Compatibility: Thunderbird-91 and above.

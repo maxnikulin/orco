@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>orco-0.3.0 Release Notes</title>
+  </head>
+  <body>
+    <h1>orco-0.3.0</h1>
+    <h2>New Features</h2>
+    <ul>
+      <li>Context menu entry for message body to check if you have a link
+        in your notes.</li>
+      <li>A shortcut may be configured in add-on manager.
+        Unfortunately it is not the same as context menu item,
+        so <code>[Shift+F10]</code> and accelerator key
+        (currently <code>n</code>, but I am going to change it
+        to <code>q</code> to have less alternative options)
+        may be more convenient.</li>
+    </ul>
+    <h2>Bug Fixes</h2>
+    <ul>
+      <li>Add message display action to messages open in new window
+        since such views lack browser action toolbar button.</li>
+      <li>Time when Message-IDs were fetched from files may be checked
+        in the action popup to figure out if refresh is necessary.
+        Earlier query for selected messages overwrote the log entry.</li>
+    </ul>
+    <p>The add-on requires native messaging helper application
+    <a href="https://github.com/maxnikulin/burl">https://github.com/maxnikulin/burl</a>
+    </p>
+    <p>For overview of the features visit the project page at
+    <a href="https://github.com/maxnikulin/orco">https://github.com/maxnikulin/orco</a>
+    <p>2022-06-28</p>
+  </body>
+</html>

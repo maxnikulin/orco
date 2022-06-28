@@ -17,6 +17,13 @@
 				"applications": {
 					"gecko": { "strict_min_version": "91.0" }
 				}
+			}, {
+				"version": "0.3.0",
+				"update_link": "https://github.com/maxnikulin/orco/releases/download/v0.3.0/orco-0.3.0-unsigned.xpi",
+				"update_info_url": "https://raw.githubusercontent.com/maxnikulin/orco/release/updates/orco-release-notes-0.3.0.html",
+				"applications": {
+					"gecko": { "strict_min_version": "91.0" }
+				}
 			} ]
 		}
 	}
