@@ -21,6 +21,7 @@
 				"version": "0.3.0",
 				"update_link": "https://github.com/maxnikulin/orco/releases/download/v0.3.0/orco-0.3.0-unsigned.xpi",
 				"update_info_url": "https://raw.githubusercontent.com/maxnikulin/orco/release/updates/orco-release-notes-0.3.0.html",
+				"update_hash": "sha256:0acd86babdeef00af3b55688bc85916973bc7e52d9fad33986f20461c4ecd141",
 				"applications": {
 					"gecko": { "strict_min_version": "91.0" }
 				}
