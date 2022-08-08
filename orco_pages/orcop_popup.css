@@ -4,6 +4,28 @@ body {
 	/* At least during alpha stage selectable text may be useful for bug reports */
 	user-select: text;
 }
+
+/* Fix popup width to avoid change of its position
+ * (to the left or to the right if the button when page is changed */
+body {
+	/* Avoid overflow if the action toolbar button is in the extension ">>" menu */
+	max-width: 100%;
+}
+body {
+	width: 400px;
+}
+@media all and (min-device-width: 801px) {
+	body {
+		width: 600px;
+	}
+}
+@media all and (min-device-width: 1201px) {
+	body {
+		/* hardcoded value in browsers */
+		width: 800px;
+	}
+}
+
 /* Reset UI theme, otherwise background is not applied */
 button.panel-section-footer-button {
   border: none;
