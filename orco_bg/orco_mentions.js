@@ -117,7 +117,7 @@ class OrcoMentions {
 		} catch (ex) {
 			console.error(ex);
 			// TODO make error an Array
-			retval.error = retval.error || {
+			retval.error = retval.error || orco_common.errorDescription(ex) || {
 				message: String(ex.message || ex),
 				type: Object.getPrototypeOf(ex)?.constructor?.name || "Unknown error",
 			};

@@ -75,18 +75,47 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 			throw new Error("Tab unknown, message list unavailable");
 		}
 		const retval = [];
+		const errors = [];
 		for (const tabId of tabIdArray) {
-			if (browser.messageDisplay?.getDisplayedMessages) {
-				// TB 78.4
-				selectedMessages = await browser.messageDisplay.getDisplayedMessages(tabId);
+			try {
+				// TB >= 78.4
+				selectedMessages = await browser.messageDisplay?.getDisplayedMessages?.(tabId);
 				if (selectedMessages?.length > 0) {
 					retval.push(...selectedMessages);
 					continue
 				}
+			} catch (ex) {
+				errors.push(orco_common.addErrorStack(ex));
+				if (ex.message === "An unexpected error occurred") {
+					// Thunderbird-91 can not handle message opened from a `.eml` file.
+					//  msgHdr.getProperty is not a function ext-mail.js:1704
+					console.log(
+						"mtwel_msg_selection: ignoring exception, likely message from an .eml file",
+						ex);
+				} else {
+					console.warn(
+						"mtwel_msg_selection: messageDisplay.getDisplayedMessages: ignoring exception",
+						ex);
+				}
 			}
-			let message = await browser.messageDisplay?.getDisplayedMessage(tabId);
-			if (message) {
-				retval.push(message);
+			try {
+				let message = await browser.messageDisplay?.getDisplayedMessage?.(tabId);
+				if (message) {
+					retval.push(message);
+				}
+			} catch (ex) {
+				errors.push(orco_common.addErrorStack(ex));
+				if (ex.message === "An unexpected error occurred") {
+					// Thunderbird-91 can not handle message opened from a `.eml` file.
+					//  msgHdr.getProperty is not a function ext-mail.js:1704
+					console.log(
+						"mtwel_msg_selection: ignoring exception, likely message from an .eml file",
+						ex);
+				} else {
+					console.warn(
+						"mtwel_msg_selection: messageDisplay.getDisplayedMessage: ignoring exception",
+						ex);
+				}
 			}
 			try {
 				selectedMessages = await browser.mailTabs.getSelectedMessages?.(tabId);
@@ -95,18 +124,23 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 					continue;
 				}
 			} catch (ex) {
+				errors.push(orco_common.addErrorStack(ex));
 				// A thunderbird bug (91, 103): exception when no folder is selected.
 				// https://bugzilla.mozilla.org/1773972
 				// "mailTabs.getSelectedMessages: Error: An unexpected error occurred"
 				console.error("mtwel_msg_selection.getMessageHeaderArray: browser.mailTabs.getSelectedMessages:", ex);
 			}
 		}
-		if (
-			!(retval.length > 0) &&
-			browser.messageDisplay == null &&
-			browser.mailTabs.getSelectedMessages == null
-		) {
-			throw new Error("No messagesRead permission");
+		if (!(retval.length > 0)) {
+			if (errors.length > 0) {
+				throw new AggregateError(errors, "Get selected messages failed");
+			}
+			if (
+				browser.messageDisplay == null &&
+				browser.mailTabs.getSelectedMessages == null
+			) {
+				throw new Error("No messagesRead permission");
+			}
 		}
 		return retval;
 	};
