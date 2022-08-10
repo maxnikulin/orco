@@ -82,14 +82,14 @@ var orco_common = function orco_common_load() {
 		}
 		if (error.errors) {
 			for (const err of error.errors) {
-				queue.push({ err, level: 1, reason: "Errors" });
+				queue.push({ error: err, level: 1, reason: "Errors" });
 			}
 		}
 		while (queue.length > 0) {
 			try {
 				const item = queue.pop();
 				const error = item.error;
-				const prefix = "  "*item.level;
+				const prefix = "  ".repeat(item.level);
 				const summary = [ item.reason + ":" ];
 				const type = Object.getPrototypeOf(error)?.constructor?.name;
 				if (type) {
@@ -104,7 +104,7 @@ var orco_common = function orco_common_load() {
 				}
 				retval.details.push(prefix + summary.join(" "));
 				if (error.stack) {
-					retval.details.push(error.stack.replace(/^.?\S/mg, "prefix" + "$&"));
+					retval.details.push(error.stack.replace(/^.?\S/mg, prefix + "$&"));
 				}
 				if (error.cause) {
 					queue.push({ error: error.cause, level: item.level + 1, reason: "Cause" });
