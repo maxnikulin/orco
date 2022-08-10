@@ -53,6 +53,13 @@ var orco_common = function orco_common_load() {
 		}
 		return "<No string representation>";
 	};
+	/// Extension exception are often generated with empty stack
+	orco_common.addErrorStack = function addErrorStack(error) {
+		if (error instanceof Error && !error.stack) {
+			error.stack = new Error().stack.replace(/^[^\n]*\n/,"");
+		}
+		return error;
+	};
 	orco_common.errorDescription = function errorDescription(error) {
 		if (error == null) {
 			return error;
