@@ -93,3 +93,51 @@ a.panel-list-item > .text-shortcut {
 	display: flex;
 	align-items: center;
 }
+
+.card {
+	margin-block: 0.5ex;
+}
+.card-message-addresses, .card-link {
+	display: flex;
+	column-gap: 1ex;
+}
+.card-message-addresses {
+	justify-content: space-between;
+}
+.card-message-addresses > * {
+	flex-grow: 1;
+	flex-shrink: 1;
+}
+.card-message-addresses > .icon,
+.card-message-addresses > time
+{
+	flex-grow: 0;
+	flex-shrink: 0;
+}
+
+.card-other {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	column-gap: 1ex;
+}
+.card-message-addresses > *,
+.card-other > * {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+.card-subject {
+	font-weight: bolder;
+}
+.card-other > div, .card-link > * {
+	flex-shrink: 1;
+	min-width: 0;
+}
+
+.selection-text {
+	overflow: hidden;
+	max-height: 3em;
+	text-overflow: ellipsis;
+	overflow-wrap: break-word;
+}

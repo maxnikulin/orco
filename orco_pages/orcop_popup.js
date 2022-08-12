@@ -106,9 +106,42 @@ function orcopSetMentionsText(txt) {
 }
 
 function orcopRenderMentions(mentionsResult) {
+	const urlMap = new Map(mentionsResult);
 	const fragments = [];
-	for (const [mid, mentions] of mentionsResult) {
+	const { selection } = gOrcoP;
+	const content = selection?.content;
+	if (content?.URLs?.length > 0) {
+		if (content.selectionText) {
+			fragments.push(E("div", { className: "selection-text" }, content.selectionText));
+		}
+		for (const link of content.URLs) {
+			fragments.push(orcopRenderLinkCard(link));
+			const href = link.url;
+			const mentions = urlMap.get(href);
+			if (mentions === undefined) {
+				continue;
+			}
+			fragments.push(lrp_mentions_view.render(mentions));
+			urlMap.delete(href); // TODO it may be referenced later
+		}
+	}
+	for (const msg of (selection?.messages || [])) {
+		fragments.push(orcopRenderMessageCard(msg));
+		const href = 'mid:' + msg.messageID;
+		const mentions = urlMap.get(href);
+		if (mentions === undefined) {
+			continue;
+		}
 		fragments.push(lrp_mentions_view.render(mentions));
+		urlMap.delete(href); // TODO it may be referenced later
+	}
+	if (urlMap.size > 0) {
+		console.warn("orcopRenderMentions: results unrelated to selection");
+	}
+	for (const [url, mentions] of urlMap.entries()) {
+		fragments.push(
+			orcopRenderLinkCard({ url }),
+			lrp_mentions_view.render(mentions));
 	}
 	gOrcoP.elements.mentions_mentions.replaceChildren(
 		E("ul", { className: "tree" }, ...fragments));
@@ -590,6 +623,47 @@ function orcopOnPopupLogRingUpdate(logRing) {
 			console.error("orcopOnPopupLogRingUpdate: entry", i, ex);
 		}
 	}
+}
+
+function orcopRenderMessageCard(msg) {
+	const firstLine = [ E(
+		"span",
+		{ className: "icon", "aria-label": "Message" },
+		"\u{2709}" /* Envelope */) ];
+	if (msg.from) {
+		firstLine.push(E("span", null, msg.from));
+	}
+	if (msg.to) {
+		firstLine.push(E("span", null, "to " + msg.to));
+	}
+	const date = msg.date;
+	if (date) {
+		const dateFormatter = new Intl.DateTimeFormat([], { timeStyle: "short", dateStyle: "short" });
+		firstLine.push(E('time', { datetime: date.toISOString() }, dateFormatter.format(date)));
+	}
+	const other = [];
+	if (msg.subject) {
+		other.push(E('div', { className: "card-subject" }, msg.subject));
+	}
+	const href = 'mid:' + msg.messageID;
+	other.push( E("div", null, E("a", { href }, href)));
+	return E('div', { className: "card" },
+		E('div', { className: "card-message-addresses" }, ...firstLine),
+		E('div', { className: "card-other" }, ...other));
+}
+
+function orcopRenderLinkCard(link) {
+	const href = link.url;
+	// TODO icon depending on .source
+	const header = [
+		E(
+			"span",
+			{ className: "icon", "aria-label": "Link" },
+			"\u{1F517}" /* Link */),
+		E("span", null, E("a", { href }, href)),
+	];
+	return E('div', { className: "card" },
+		E('div', { className: "card-link" }, ...header));
 }
 
 if (typeof browser === "undefined") {
