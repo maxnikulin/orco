@@ -87,7 +87,8 @@ var mtwel_util = function mtwel_util_load() {
 		}
 
 		try {
-			// Thunderbird-91 and 103.0a1 report unexpected error for `{ highlighted: true }`:
+			// Thunderbird-91 reports unexpected error for `{ highlighted: true }`:
+			// Fix backported to Thunderbird-102.
 			// https://bugzilla.mozilla.org/1773977
 			// tabs.query({highlighted: true}): Error: An unexpected error occurred undefined
 			for (const selector of [ { highlighted: true }, { active: true } ]) {

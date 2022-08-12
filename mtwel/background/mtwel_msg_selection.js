@@ -87,8 +87,11 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 			} catch (ex) {
 				errors.push(orco_common.addErrorStack(ex));
 				if (ex.message === "An unexpected error occurred") {
-					// Thunderbird-91 can not handle message opened from a `.eml` file.
+					// Thunderbird-91 and 102 can not handle message opened from a `.eml` file.
 					//  msgHdr.getProperty is not a function ext-mail.js:1704
+					// https://bugzilla.mozilla.org/1784047
+					// "`messageDisplay.getDisplayedMessages: Error: An unexpected error occurred`
+					// when opened from an .eml file"
 					console.log(
 						"mtwel_msg_selection: ignoring exception, likely message from an .eml file",
 						ex);
