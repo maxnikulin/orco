@@ -77,7 +77,8 @@ function orcopDoPopupOnMessage(msg) {
 					}
 				}
 				gOrcoP.mentions = params?.mentions ?? [];
-				orcopRenderMentions(params?.mentions);
+				gOrcoP.elements.mentions_mentions.replaceChildren(
+					orcopRenderMentions(params?.mentions));
 				if (!hasErrors && params.mentions?.length > 0) {
 					gOrcoP.logRing.push({
 						id: msg.id,
@@ -110,49 +111,53 @@ function orcopPopupError(error) {
 
 function orcopSetMentionsText(txt) {
 	gOrcoP.elements.text_main_mentions.replaceChildren(txt);
-	gOrcoP.elements.mentions_mentions.replaceChildren(txt);
 }
 
 function orcopRenderMentions(mentionsResult) {
-	const urlMap = new Map(mentionsResult);
-	const fragments = [];
+	const urlMap = mentionsResult && new Map(mentionsResult);
+	const fragment = new DocumentFragment;
 	const { selection } = gOrcoP;
 	const content = selection?.content;
 	if (content?.URLs?.length > 0) {
 		if (content.selectionText) {
-			fragments.push(E("div", { className: "selection-text" }, content.selectionText));
+			fragment.append(orcopRenderSelectionCard(content.selectionText));
 		}
 		for (const link of content.URLs) {
-			fragments.push(orcopRenderLinkCard(link));
-			const href = link.url;
-			const mentions = urlMap.get(href);
-			if (mentions === undefined) {
+			fragment.append(orcopRenderLinkCard(link));
+			if (urlMap === undefined) {
 				continue;
 			}
-			fragments.push(lrp_mentions_view.render(mentions));
+			const href = link.url;
+			const mentions = urlMap.get(href);
+			fragment.append(
+				mentions?.total > 0
+				? E("ul", { className: "tree" }, lrp_mentions_view.render(mentions))
+				: orcopRenderNoMentionsCard());
 			urlMap.delete(href); // TODO it may be referenced later
 		}
 	}
 	for (const msg of (selection?.messages || [])) {
-		fragments.push(orcopRenderMessageCard(msg));
-		const href = 'mid:' + msg.messageID;
-		const mentions = urlMap.get(href);
-		if (mentions === undefined) {
+		fragment.append(orcopRenderMessageCard(msg));
+		if (urlMap === undefined) {
 			continue;
 		}
-		fragments.push(lrp_mentions_view.render(mentions));
+		const href = 'mid:' + msg.messageID;
+		const mentions = urlMap.get(href);
+		fragment.append(
+			mentions?.total > 0
+			? E("ul", { className: "tree" }, lrp_mentions_view.render(mentions))
+			: orcopRenderNoMentionsCard());
 		urlMap.delete(href); // TODO it may be referenced later
 	}
-	if (urlMap.size > 0) {
+	if (urlMap?.size > 0) {
 		console.warn("orcopRenderMentions: results unrelated to selection");
+		for (const [url, mentions] of urlMap.entries()) {
+			fragment.append(
+				orcopRenderLinkCard({ url }),
+				lrp_mentions_view.render(mentions));
+		}
 	}
-	for (const [url, mentions] of urlMap.entries()) {
-		fragments.push(
-			orcopRenderLinkCard({ url }),
-			lrp_mentions_view.render(mentions));
-	}
-	gOrcoP.elements.mentions_mentions.replaceChildren(
-		E("ul", { className: "tree" }, ...fragments));
+	return fragment;
 }
 
 function orcopSetMentionsSelection(params) {
@@ -168,9 +173,12 @@ function orcopSetMentionsSelection(params) {
 	} catch (ex) {
 		console.error("orcopSetMentionsSelection: exception while reporting error", ex);
 	}
+	const fragment = new DocumentFragment;
 	try {
 		if (params.error) {
-			orcopSetMentionsText("Mentions: error: " + params.error.message);
+			const txt = "Mentions: error: " + params.error.message;
+			fragment.append(orcopRenderNoMentionsCard(txt));
+			orcopSetMentionsText(txt);
 		}
 		if (params.messages?.length > 0) {
 			const first = params.messages[0];
@@ -200,10 +208,14 @@ function orcopSetMentionsSelection(params) {
 			}
 			orcopSetMentionsText(parts.join(" "));
 		} else if (params.messages?.length === 0) {
-			orcopSetMentionsText("No messages selected");
+			const txt = "No messages selected";
+			fragment.append(orcopRenderNoMentionsCard(txt));
+			orcopSetMentionsText(txt);
 		} else if (params.error == null) {
+			const txt = "Mentions: internal error";
 			console.warn("orcopSetMentionsSelection: neither messages no error is set");
-			orcopSetMentionsText("Mentions: internal error");
+			fragment.append(orcopRenderNoMentionsCard(txt));
+			orcopSetMentionsText(txt);
 		}
 	} catch (ex) {
 		orcopPopupError(ex);
@@ -213,6 +225,8 @@ function orcopSetMentionsSelection(params) {
 			console.error("orcopSetMentionsSelection", ex2);
 		}
 	}
+	fragment.append(orcopRenderMentions(undefined));
+	gOrcoP.elements.mentions_mentions.replaceChildren(fragment);
 	if (params.userAction) {
 		orcopActionHandlers.mentions();
 	}
@@ -672,6 +686,17 @@ function orcopRenderLinkCard(link) {
 	];
 	return E('div', { className: "card" },
 		E('div', { className: "card-link" }, ...header));
+}
+
+function orcopRenderSelectionCard(selectionText) {
+	return E("div", { className: "card-link" },
+		E("span", { className: "icon", "aria-label": "Selected text" },
+			"\u{1F4CB}" /* Clipboard */),
+		E("span", { className: "selection-text" }, selectionText));
+}
+
+function orcopRenderNoMentionsCard(text) {
+	return E('div', null, text ?? "No mentions");
 }
 
 if (typeof browser === "undefined") {
