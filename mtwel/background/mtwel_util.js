@@ -99,7 +99,17 @@ var mtwel_util = function mtwel_util_load() {
 						return tabs;
 					}
 				} catch (ex) {
-					console.error("mtwel_util.getHighlightedMailTabs: ignore exception", ex);
+					if (ex.message === "An unexpected error occurred") {
+						console.log(
+							"mtwel_util.getHighlightedMailTabs:",
+							"tabs.query", selector,
+							"ignore exception, likely Bug #1773977:",
+							"{higlighted: true} selector is not supported",
+							ex)
+					} else {
+						orco_common.addErrorStack(ex);
+						console.error("mtwel_util.getHighlightedMailTabs: ignore exception", ex);
+					}
 				}
 			}
 		} catch (ex) {

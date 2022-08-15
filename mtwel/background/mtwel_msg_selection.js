@@ -48,7 +48,10 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 		const tabs = _toIds(await mtwel_util.getHighlightedMailTabs()) ??
 			// Likely never used, it is fallback because it
 			// ignores `{ type: "messageDisplay" }` tabs
-			// and `{ highlighted: true }` option is not supported.
+			// and `{ highlighted: true }` option is not supported
+			// in Thunderbird-91, fix backported to Thunderbird-102.
+			// https://bugzilla.mozilla.org/1773977
+			// tabs.query({highlighted: true}): Error: An unexpected error occurred undefined
 			_toIds(await browser.mailTabs.query(
 				{ active: true, currentWindow: true, }));
 
@@ -85,7 +88,7 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 					continue
 				}
 			} catch (ex) {
-				errors.push(orco_common.addErrorStack(ex));
+				orco_common.addErrorStack(ex);
 				if (ex.message === "An unexpected error occurred") {
 					// Thunderbird-91 and 102 can not handle message opened from a `.eml` file.
 					//  msgHdr.getProperty is not a function ext-mail.js:1704
@@ -93,11 +96,16 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 					// "`messageDisplay.getDisplayedMessages: Error: An unexpected error occurred`
 					// when opened from an .eml file"
 					console.log(
-						"mtwel_msg_selection: ignoring exception, likely message from an .eml file",
+						"mtwel_msg_selection.getMessageHeaderArray:",
+						"messageDisplay.getDisplayedMessages:",
+						"ignoring exception, likely Bug #1784047:",
+						"message from an .eml file",
 						ex);
 				} else {
+					errors.push(ex);
 					console.warn(
-						"mtwel_msg_selection: messageDisplay.getDisplayedMessages: ignoring exception",
+						"mtwel_msg_selection: messageDisplay.getDisplayedMessages:",
+						"will try fallback due to exception:",
 						ex);
 				}
 			}
@@ -107,16 +115,21 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 					retval.push(message);
 				}
 			} catch (ex) {
-				errors.push(orco_common.addErrorStack(ex));
+				orco_common.addErrorStack(ex);
 				if (ex.message === "An unexpected error occurred") {
 					// Thunderbird-91 can not handle message opened from a `.eml` file.
 					//  msgHdr.getProperty is not a function ext-mail.js:1704
 					console.log(
-						"mtwel_msg_selection: ignoring exception, likely message from an .eml file",
+						"mtwel_msg_selection.getMessageHeaderArray:",
+						"messageDisplay.getDisplayedMessage:",
+						"ignoring exception, likely Bug #1784047:",
+						"message from an .eml file",
 						ex);
 				} else {
+					errors.push(ex);
 					console.warn(
-						"mtwel_msg_selection: messageDisplay.getDisplayedMessage: ignoring exception",
+						"mtwel_msg_selection: messageDisplay.getDisplayedMessage:",
+						"will try fallback due to exception:",
 						ex);
 				}
 			}
@@ -127,11 +140,24 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 					continue;
 				}
 			} catch (ex) {
-				errors.push(orco_common.addErrorStack(ex));
-				// A thunderbird bug (91, 103): exception when no folder is selected.
-				// https://bugzilla.mozilla.org/1773972
-				// "mailTabs.getSelectedMessages: Error: An unexpected error occurred"
-				console.error("mtwel_msg_selection.getMessageHeaderArray: browser.mailTabs.getSelectedMessages:", ex);
+				orco_common.addErrorStack(ex);
+				if (ex.message === "An unexpected error occurred") {
+					// Thunderbird-91 bug: exception when account instead of folder is selected.
+					// https://bugzilla.mozilla.org/1773972
+					// "mailTabs.getSelectedMessages: Error: An unexpected error occurred"
+					// Fixed in Thunderbird-105)
+					console.log(
+						"mtwel_msg_selection.getMessageHeaderArray:",
+						"mailTabs.getSelectedMessages:",
+						"ignore exception, likely Bug #1773972:",
+						"no messages selected because account is chosen",
+						ex);
+				} else {
+					errors.push(ex)
+					console.warn(
+						"mtwel_msg_selection: browser.mailTabs.getSelectedMessages:",
+						ex);
+				}
 			}
 		}
 		if (!(retval.length > 0)) {
