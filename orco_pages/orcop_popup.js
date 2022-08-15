@@ -25,7 +25,15 @@ var gOrcoP = {
 };
 
 function orcopPopupOnMessage(msg) {
-	// FIXME try-catch, log error
+	try {
+		return orcopDoPopupOnMessage(msg);
+	} catch (ex) {
+		orcopPopupError(ex);
+		throw ex;
+	}
+}
+
+function orcopDoPopupOnMessage(msg) {
 	if (msg == null) {
 		console.warn("orco popup message: message is null");
 		return;
