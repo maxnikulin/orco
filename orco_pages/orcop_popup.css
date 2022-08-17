@@ -75,6 +75,7 @@ a.panel-list-item, a.panel-section-header {
 }
 .panel-list-item {
   padding-inline: 8px;
+  flex-shrink: 0;
 }
 a.panel-list-item:active, a.panel-list-item:focus,
 a.panel-section-header:focus {
@@ -92,6 +93,12 @@ a.panel-list-item > .text {
 a.panel-list-item > .text-shortcut {
   width: 16px;
   text-align: center;
+}
+
+#text_main_mentions {
+	margin-inline: 8px;
+	/* 16px icons and 4px separators */
+	padding-inline: 20px;
 }
 
 .display-none {
