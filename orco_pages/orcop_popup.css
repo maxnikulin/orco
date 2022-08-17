@@ -8,12 +8,11 @@ body {
 /* Fix popup width to avoid change of its position
  * (to the left or to the right if the button when page is changed */
 body {
+	width: 400px;
 	/* Avoid overflow if the action toolbar button is in the extension ">>" menu */
 	max-width: 100%;
 }
-body {
-	width: 400px;
-}
+
 @media all and (min-device-width: 801px) {
 	body {
 		width: 600px;
@@ -24,6 +23,45 @@ body {
 		/* hardcoded value in browsers */
 		width: 800px;
 	}
+}
+
+/* On low resolution screens bottom part of popup may be unavailable.
+ * The values below are not really safe though.
+ * https://bugzilla.mozilla.org/1785059
+ * "Content of browserAction popup may be cropped due to assumption of incorrect size" */
+body {
+	height: 400px;
+	max-height: 100%;
+}
+
+@media all and (min-device-height: 800px) {
+	body {
+		height: 500px;
+	}
+}
+
+@media all and (min-device-height: 1080px) {
+	body {
+		/* Warning: in Chromium values above 580px may cause scroll bar. */
+		height: 600px;
+	}
+}
+
+html, body {
+	/* Override `extensions.css` to make `.menu-page` flex elements. */
+	display: block;
+}
+
+.menu-page {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.stretchable {
+	overflow: auto;
+	flex-grow: 1;
+	flex-shrink: 1;
 }
 
 /* Reset UI theme, otherwise background is not applied */
@@ -63,15 +101,11 @@ a.panel-list-item > .text-shortcut {
 	visibility: hidden;
 }
 .mentions {
-	height: 20em;
 	padding-inline: 8px;
-	overflow: auto;
-}
-.log-list {
-	max-height: 20em;
 }
 .log-list > .panel-list-item {
 	overflow: hidden;
+	flex-shrink: 0;
 }
 .log-list > .panel-list-item > .text-shortcut {
 	white-space: nowrap;

@@ -15,7 +15,7 @@
     <script src="/orco_common/orco_common.js"></script>
   </head>
   <!-- https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/user_interface/Browser_styles -->
-  <body class="panel">
+  <body><!-- Despite used in some MDN webextensions examples, it is useless: class="panel" -->
     <!-- Main page -->
     <div id="page_main" class="menu-page">
       <header class="panel-section panel-section-header">
@@ -24,7 +24,7 @@
         </span>
         <span class="text-section-header">orco&nbsp;&mdash; Org Column</span>
       </header>
-      <div class="panel-section panel-section-list">
+      <div class="panel-section panel-section-list stretchable">
         <a href="#page_mentions" class="panel-list-item" role="menuitem" data-orco-action="mentions">
           <span class="icon" role="img" aria-hidden="true">&#x1f984;</span><!-- unicorn -->
           <span class="text" id="text_main_mentions">No mentions</span>
@@ -63,7 +63,7 @@
         <span class="icon-section-header" role="img" aria-label="to main menu">&lt;</span>
         <span class="text-section-header">orco Log</span>
       </a>
-      <div class="panel-section panel-section-list log-list">
+      <div class="panel-section panel-section-list log-list stretchable">
       <!-- div added newline to selected text, so use span elements
         to copy text as continuous lines -->
         <div id="log_message_0" class="panel-list-item hidden">
@@ -113,7 +113,8 @@
         <span class="icon-section-header" role="img" aria-label="to main menu">&lt;</span>
         <span class="text-section-header">Mentions in Org Files</span>
       </a>
-      <div class="mentions" id="mentions_mentions">
+      <div class="mentions stretchable" id="mentions_mentions">
+        Something went wrong
       </div>
       <div class="panel-section-separator"></div>
       <div class="panel-section panel-section-list">
