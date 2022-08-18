@@ -78,12 +78,32 @@ class OrcoMentions {
 					// Adding mailto: links as duplicate with mid: is considered as acceptable.
 					const midRaw = orco_burl.extractMessageID(schemeRegExp, value);
 					const mid = midRaw && 'mid:' + midRaw;
-					if (midRaw === undefined || stored.has(mid)) {
+					if (midRaw === undefined) {
 						continue;
+					}
+					if (stored.has(mid)) {
+						if (value === mid) {
+							selection.URLs.pop();
+						} else {
+							continue;
+						}
+					}
+					let messages;
+					try {
+						messages = await this._queryMessageId(midRaw);
+						if (messages?.length > 0 && value.startsWith("mailto:" + midRaw)) {
+							selection.URLs.pop();
+						}
+					} catch (ex) {
+						console.error(ex);
 					}
 					stored.add(mid);
 					stored.add(midRaw);
-					selection.URLs.push({ url: mid, source: field });
+					selection.URLs.push({
+						url: mid,
+						source: field,
+						messages: messages && messages.map(this._convertMessage).slice(0, 5),
+					});
 				}
 				if (selection !== undefined) {
 					retval.content = selection;
@@ -106,13 +126,8 @@ class OrcoMentions {
 					type: "Error",
 				};
 			} else {
-				retval.messages = messages.map(h => ({
-					messageID: h.headerMessageId,
-					from: h.author,
-					to: h.recipients?.[0] ??  h.ccList?.[0] ?? h.bccList?.[0],
-					date: h.date,
-					subject: h.subject,
-				}));
+				// `this` is not used by the method.
+				retval.messages = messages.map(this._convertMessage);
 			}
 		} catch (ex) {
 			console.error(ex);
@@ -124,6 +139,44 @@ class OrcoMentions {
 		}
 		return retval;
 	}
+
+	async _queryMessageId(headerMessageId) {
+		const result = await browser.messages.query({ headerMessageId });
+		return result?.messages?.length > 0 ? result.messages : undefined;
+	}
+
+	_convertMessage(header /* messages.MessageHeader */) {
+		// TODO consider adding `accountsRead` permission to use folder
+		// name (it can not be changed) as newsgroup name for NNTP accounts
+		// since other fields are empty.
+		function* _recipients(h) {
+			let i = 0;
+			const limit = 5;
+			for (const value of [h.recipients, h.ccList, h.bccList]) {
+				if (!value) {
+					continue;
+				}
+				for (const addr of value) {
+					if (++i > limit) {
+						break;
+					}
+					yield addr
+				}
+			}
+		}
+		let to = Array.from(_recipients(header));
+		if (!(to.length > 0)) {
+			to = undefined;
+		}
+		return {
+			messageID: header.headerMessageId,
+			from: header.author,
+			to,
+			date: header.date,
+			subject: header.subject,
+		};
+	}
+
 	async _notifySelection() {
 		const sentry = this._selectionSentry = {};
 		await new Promise(resolve => setTimeout(resolve, this.CONTEXT_MENUS_PAUSE));

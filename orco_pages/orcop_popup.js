@@ -664,15 +664,23 @@ function orcopRenderMessageCard(msg, params) {
 function orcopRenderLinkCard(link, params) {
 	const href = link.url;
 	// TODO icon depending on .source
-	const header = [
-		E(
-			"span",
-			{ className: "icon", "aria-label": "Link" },
-			"\u{1F517}" /* Link */),
-		E("span", null, params?.active !== false ? E("a", { href }, href) : href),
-	];
-	return E('div', { className: "card" },
-		E('div', { className: "card-link" }, ...header));
+	if (link.messages?.length > 0) {
+		const fragment = new DocumentFragment();
+		for (const msg of link.messages) {
+			fragment.append(orcopRenderMessageCard(msg, params));
+		}
+		return fragment;
+	} else {
+		const header = [
+			E(
+				"span",
+				{ className: "icon", "aria-label": "Link" },
+				"\u{1F517}" /* Link */),
+			E("span", null, params?.active !== false ? E("a", { href }, href) : href),
+		];
+		return E('div', { className: "card" },
+			E('div', { className: "card-link" }, ...header));
+	};
 }
 
 function orcopRenderSelectionCard(selectionText) {
