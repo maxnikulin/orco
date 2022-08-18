@@ -91,6 +91,7 @@ class _OrcoPub {
 		this.eventSource.addListener(this.postMessage);
 	}
 	get addSource() { return this.eventSource.addSource; }
+	hasSubscribers() { return this._subscribers.length > 0; }
 	_postMessage(message) {
 		if (message == null) {
 			return;
@@ -179,6 +180,13 @@ class OrcoPubSubService {
 		const entry = new _OrcoPub(messageHandler);
 		this._publishers.set(name, entry);
 		return entry.addSource;
+	}
+	hasSubscribers(subscription) {
+		const pub = this._publishers.get(subscription);
+		if (!pub) {
+			throw new Error("Unknown subscription: " + String(subscription));
+		}
+		return pub.hasSubscribers();
 	}
 	_onConnect(port) {
 		con.debug("OrcoPubSubService: connected", port);

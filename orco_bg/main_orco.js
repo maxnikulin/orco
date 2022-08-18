@@ -145,8 +145,25 @@ function orcoInitMenuHandler() {
 			if (info?.menuItemId !== "ORCO_MENTIONS") {
 				throw new Error(`Unsupported menu entry "${info?.menuItemId}"`);
 			}
+			try {
+				if (gOrcoB.mentions.notifySelfClick(info)) {
+					return;
+				}
+			} catch (ex) {
+				con.error("gOrcoB.mentions.notifySelfClick", ex);
+			}
 			// TODO log error, notice no `await` despite calls of `async` functions.
 			gOrcoB.mentions.storeMenusContext(info, tab);
+
+			// `browserAction.openPopup()` has no effect if the popup is already shown.
+			try { 
+				if (gOrcoB.pubsub.hasSubscribers("popupNotifications")) {
+					gOrcoB.reloadPopup();
+				}
+			} catch (ex) {
+				con.error("gOrcoB.reloadPopup", ex);
+			}
+
 			// For Chrome `openPopup` is supported only for `action` API since manifest v3.
 			// `openPopup` must be executed from user action context,
 			// so no `await` is allowed before.
@@ -213,6 +230,9 @@ function orcoRegisterPopupSubscription() {
 	const addSource = gOrcoB.pubsub.register("popupNotifications", server);
 	addSource(gOrcoB.singleTask.eventSource);
 	addSource(gOrcoB.mentions.eventSource);
+	const reloadEventSource = new OrcoPubEventSource();
+	addSource(reloadEventSource);
+	gOrcoB.reloadPopup = () => reloadEventSource.notify({ method: "orco.reload", });
 }
 
 function orcoRegisterSettignsSubscription() {

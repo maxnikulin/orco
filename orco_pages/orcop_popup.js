@@ -87,12 +87,20 @@ function orcopDoPopupOnMessage(msg) {
 				}
 				break;
 			}
+		case "orco.reload":
+			// Update mentions in the case menu click on a link inside the popup.
+			window.history.replaceState(null, null, "#");
+			window.location.reload();
+			break;
 		case "error":
 			gOrcoP.logRing.push({
 				id: msg.id,
 				status: "error",
 				...params,
 			});
+			break;
+		case "orco.log":
+			gOrcoP.logRing.push(params);
 			break;
 		default:
 			console.warn("unsupported message", msg);

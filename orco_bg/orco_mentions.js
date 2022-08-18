@@ -31,12 +31,30 @@ class OrcoMentions {
 		this.eventSource = new OrcoPubEventSource(this._greet.bind(this));
 		this.maxMessages = maxMessages;
 	}
+	notifySelfClick(clickData) {
+		const selfURL = browser.runtime.getURL("/");
+		const fields = ['linkUrl', 'srcUrl', 'frameUrl', 'linkText' ];
+		if (
+			clickData == null
+			|| !clickData.pageUrl?.startsWith(selfURL)
+			|| !fields.every(f => { const v = clickData[f]; return !v || v.startsWith(selfURL); })
+		) {
+			return false;
+		}
+		this.eventSource.notify({
+			method: "orco.log",
+			params: { message: "Context menu action ignored: no URL", },
+		});
+		return true;
+	}
 	async storeMenusContext(clickData, tab) {
 		this._menusContext = await this._getMenusContext(clickData, tab);
 		this._menusContext.userAction = true;
 	}
 	async _getMenusContext(clickData, tab) {
 		const schemeRegExp = /^(?:[a-z][a-z0-9]*(?:[-+][a-z0-9]+)*):(?:\/\/)?/i;
+		const selfURL = browser.runtime.getURL("/");
+		const ignorePagePrefixes = [ "mailbox:", "news:", selfURL ];
 		const retval = { ts: Date.now() };
 		try {
 			if (clickData != null) {
@@ -56,10 +74,7 @@ class OrcoMentions {
 					}
 					// `pageUrl` is `mailbox:` URL even for RSS articles in 3 pane window,
 					// `news` is internal URI with `?group=...` parameters.
-					if (
-						field === 'pageUrl' &&
-						(value.startsWith('mailbox:') || value.startsWith('news:'))
-					) {
+					if (field === 'pageUrl' && ignorePagePrefixes.some(p => value.startsWith(p))) {
 						continue;
 					}
 					selection = selection || {};
@@ -118,14 +133,16 @@ class OrcoMentions {
 			};
 		}
 		try {
-			const messages = await mtwel_msg_selection.getMessageHeaderArray(clickData, tab);
+			const clickInPopup = clickData?.pageUrl?.startsWith(selfURL);
+			const messages = !clickInPopup
+				&& await mtwel_msg_selection.getMessageHeaderArray(clickData, tab);
 			const max = this.maxMessages;
-			if (!(messages && messages.length >= 0 && messages.length <= max)) {
+			if (messages && !(messages.length >= 0 && messages.length <= max)) {
 				retval.error = {
 					message: `Mentions may be shown for 1…${max} messages`,
 					type: "Error",
 				};
-			} else {
+			} else if (messages) {
 				// `this` is not used by the method.
 				retval.messages = messages.map(this._convertMessage);
 			}
