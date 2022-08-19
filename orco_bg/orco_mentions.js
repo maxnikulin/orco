@@ -73,6 +73,10 @@ class OrcoMentions {
 							// no URLs
 							break;
 						}
+						// Angle brackets are included into `linkText`.
+						if (value.startsWith('<') && value.endsWith('>') && stored.has(value.slice(1, -1))) {
+							continue;
+						}
 						stored.add(value);
 						selection[field] = value;
 						continue;
