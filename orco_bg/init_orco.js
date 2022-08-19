@@ -20,7 +20,7 @@
 var con = console;
 try {
 	if (typeof MwelConsole !== "undefined") {
-		con = new MwelConsole("orco", MwelConsole.DEBUG);
+		con = new MwelConsole("orco", MwelConsole.INFO);
 	}
 	con.log("loading...");
 } catch (ex) {

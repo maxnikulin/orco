@@ -38,7 +38,6 @@ function orcopDoPopupOnMessage(msg) {
 		console.warn("orco popup message: message is null");
 		return;
 	}
-	console.debug("orco_popup: message", msg); // FIXME
 	const params = msg.params;
 	switch (msg.method) {
 		case "task.status":

@@ -61,7 +61,7 @@ var con = {
 	},
 };
 
-con.init("CuColAPI", "DEBUG");
+con.init("CuColAPI", "INFO");
 
 con.debug("loading...");
 
