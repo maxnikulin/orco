@@ -171,8 +171,11 @@ function orcoInitMenuHandler() {
 			// so `command` as menu item action is not possible.
 			// https://bugzilla.mozilla.org/1775246
 			// "browserAction buttons missed in messageDisplay windows"
-			browser.messageDisplayAction.openPopup();
-			browser.browserAction.openPopup();
+			if (tab?.mailTab === false) {
+				browser.messageDisplayAction.openPopup();
+			} else {
+				browser.browserAction.openPopup();
+			}
 		});
 	// `_execute_browser_action` can not be used in manifest.
 	browser.commands.onCommand.addListener(
@@ -293,6 +296,14 @@ function orcoOnWindowCreated(win) {
 }
 
 async function orcoDisableMessageDisplayAction(win) {
+	const { version } = await browser.runtime.getBrowserInfo();
+	const major = parseInt(version.split(".")[0], 10);
+	// Unsure concerning precise version, ESR is used.
+	// Unlike in Thunderbird-91, disabling of `messageDisplayAction` disables
+	// the toolbar button, not hides it any more.
+	if (major >= 102) {
+		return;
+	}
 	browser.messageDisplayAction.disable();
 	const messageWindows = await browser.windows.getAll(
 		{ windowTypes: ["messageDisplay"], populate: true });
