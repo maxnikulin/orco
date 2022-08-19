@@ -94,6 +94,7 @@ class OrcoMentions {
 					const withoutScheme = value.replace(schemeRegExp, "");
 					stored.add(withoutScheme);
 					stored.add(withoutScheme.replace(/\/+$/, ""));
+					stored.add(value.replace(/\/+$/, ""));
 					// TODO is it reasonable to use real prefix regexp here?
 					// TODO move `extractMessageID` from `orco_burl` to a more generic library.
 					// Adding mailto: links as duplicate with mid: is considered as acceptable.
