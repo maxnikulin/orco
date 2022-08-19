@@ -57,7 +57,7 @@ class OrcoMentions {
 		// `pageUrl` is `mailbox:` URL even for RSS articles in 3 pane window,
 		// `news` is internal URI with `?group=...` parameters.
 		const ignorePagePrefixes = [ "mailbox:", "news:" ];
-		const retval = { ts: Date.now() };
+		const retval = {};
 		try {
 			if (clickData != null) {
 				let selection;
@@ -161,6 +161,8 @@ class OrcoMentions {
 				type: Object.getPrototypeOf(ex)?.constructor?.name || "Unknown error",
 			};
 		}
+		// Query of Message-ID make take enough time, so it should be last.
+		retval.ts = Date.now();
 		return retval;
 	}
 
