@@ -643,24 +643,24 @@ function orcopOnPopupLogRingUpdate(logRing) {
 }
 
 function orcopRenderMessageCard(msg, params) {
+	const { from, to, date, subject } = msg;
 	const firstLine = [ E(
 		"span",
 		{ className: "icon", "aria-label": "Message" },
 		"\u{2709}" /* Envelope */) ];
-	if (msg.from) {
-		firstLine.push(E("span", null, msg.from));
+	if (from) {
+		firstLine.push(E("span", null, from));
 	}
-	if (msg.to) {
-		firstLine.push(E("span", null, "to " + msg.to));
+	if (to) {
+		firstLine.push(E("span", null, "to " + to));
 	}
-	const date = msg.date;
 	if (date) {
 		const dateFormatter = new Intl.DateTimeFormat([], { timeStyle: "short", dateStyle: "short" });
 		firstLine.push(E('time', { datetime: date.toISOString() }, dateFormatter.format(date)));
 	}
 	const other = [];
-	if (msg.subject) {
-		other.push(E('div', { className: "card-subject" }, msg.subject));
+	if (subject) {
+		other.push(E('div', { className: "card-subject" }, subject));
 	}
 	const href = 'mid:' + msg.messageID;
 	other.push( E("div", null, params?.active !== false ? E("a", { href }, href) : href));

@@ -181,17 +181,23 @@ class OrcoMentions {
 				}
 			}
 		}
-		let to = Array.from(_recipients(header));
-		if (!(to.length > 0)) {
-			to = undefined;
-		}
-		return {
+		const converted = {
 			messageID: header.headerMessageId,
 			from: header.author,
-			to,
-			date: header.date,
 			subject: header.subject,
 		};
+		const to = Array.from(_recipients(header));
+		if (to.length > 0) {
+			converted.to = to;
+		}
+		const { date } = header;
+		// Caught `Invalid Date` on a development Thunderbird version,
+		// should be rare in real life. Unsure if mail servers interpret the header though.
+		if (date && date instanceof Date && !isNaN(date)) {
+			converted.date = date;
+		}
+		
+		return converted;
 	}
 
 	async _notifySelection() {
