@@ -182,3 +182,14 @@ a.panel-list-item > .text-shortcut {
 	text-overflow: ellipsis;
 	overflow-wrap: break-word;
 }
+
+.selection-quote::before {
+	content: "“";
+	font-size: large;
+}
+
+.selection-quote::after {
+	content: "”";
+	align-self: end;
+	font-size: large;
+}

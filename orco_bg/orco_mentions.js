@@ -33,7 +33,7 @@ class OrcoMentions {
 	}
 	notifySelfClick(clickData) {
 		const selfURL = browser.runtime.getURL("/");
-		const fields = ['linkUrl', 'srcUrl', 'frameUrl', 'linkText' ];
+		const fields = ['linkUrl', 'srcUrl', 'frameUrl'];
 		if (
 			clickData == null
 			|| !clickData.pageUrl?.startsWith(selfURL)
@@ -54,7 +54,9 @@ class OrcoMentions {
 	async _getMenusContext(clickData, tab) {
 		const schemeRegExp = /^(?:[a-z][a-z0-9]*(?:[-+][a-z0-9]+)*):(?:\/\/)?/i;
 		const selfURL = browser.runtime.getURL("/");
-		const ignorePagePrefixes = [ "mailbox:", "news:", selfURL ];
+		// `pageUrl` is `mailbox:` URL even for RSS articles in 3 pane window,
+		// `news` is internal URI with `?group=...` parameters.
+		const ignorePagePrefixes = [ "mailbox:", "news:" ];
 		const retval = { ts: Date.now() };
 		try {
 			if (clickData != null) {
@@ -66,14 +68,18 @@ class OrcoMentions {
 					if (value == null || value == "" || stored.has(value)) {
 						continue;
 					}
-					if (field === 'selectionText') {
-						selection = selection || {};
+					if (field === 'selectionText' || field === 'linkText') {
+						if (selection === undefined) {
+							// no URLs
+							break;
+						}
 						stored.add(value);
 						selection[field] = value;
 						continue;
 					}
-					// `pageUrl` is `mailbox:` URL even for RSS articles in 3 pane window,
-					// `news` is internal URI with `?group=...` parameters.
+					if (value.startsWith(selfURL)) {
+						continue;
+					}
 					if (field === 'pageUrl' && ignorePagePrefixes.some(p => value.startsWith(p))) {
 						continue;
 					}

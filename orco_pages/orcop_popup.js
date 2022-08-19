@@ -123,9 +123,7 @@ function orcopRenderMentions(mentionsResult, params) {
 	const { selection } = gOrcoP;
 	const content = selection?.content;
 	if (content?.URLs?.length > 0) {
-		if (content.selectionText) {
-			fragment.append(orcopRenderSelectionCard(content.selectionText));
-		}
+		fragment.append(orcopRenderSelectionCard(content));
 		let i = 0;
 		for (const link of content.URLs) {
 			if (++i > params?.limit) {
@@ -682,7 +680,7 @@ function orcopRenderLinkCard(link, params) {
 		const header = [
 			E(
 				"span",
-				{ className: "icon", "aria-label": "Link" },
+				{ className: "icon", "aria-label": "Link", rel: "icon" },
 				"\u{1F517}" /* Link */),
 			E("span", null, params?.active !== false ? E("a", { href }, href) : href),
 		];
@@ -691,11 +689,19 @@ function orcopRenderLinkCard(link, params) {
 	};
 }
 
-function orcopRenderSelectionCard(selectionText) {
-	return E("div", { className: "card-link" },
-		E("span", { className: "icon", "aria-label": "Selected text" },
-			"\u{1F4CB}" /* Clipboard */),
-		E("span", { className: "selection-text" }, selectionText));
+function orcopRenderSelectionCard(content) {
+	const fragment = new DocumentFragment();
+	if (content?.selectionText) {
+		fragment.append(
+			E("div", { className: "card-link selection-quote" },
+				E("span", { className: "selection-text" }, content.selectionText)));
+	}
+	if (content?.linkText) {
+		fragment.append(
+			E("div", { className: "card-link" },
+				E("span", { className: "selection-text" }, content.linkText)));
+	}
+	return fragment;
 }
 
 function orcopRenderNoMentionsCard(text) {
