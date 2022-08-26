@@ -56,7 +56,11 @@ class OrcoMentions {
 		const selfURL = browser.runtime.getURL("/");
 		// `pageUrl` is `mailbox:` URL even for RSS articles in 3 pane window,
 		// `news` is internal URI with `?group=...` parameters.
-		const ignorePagePrefixes = [ "mailbox:", "news:" ];
+		const ignorePagePrefixes = [
+			"mailbox:",
+			"news:",
+			"about:blank", // likely `about:blank?compose` in `messageCompose` tab
+		];
 		const retval = {};
 		try {
 			if (clickData != null) {
@@ -179,6 +183,7 @@ class OrcoMentions {
 		// TODO consider adding `accountsRead` permission to use folder
 		// name (it can not be changed) as newsgroup name for NNTP accounts
 		// since other fields are empty.
+		// TODO `compose.ComposeDetails.relatedMessageId`
 		function* _recipients(h) {
 			let i = 0;
 			const limit = 5;
@@ -192,6 +197,11 @@ class OrcoMentions {
 					}
 					yield addr
 				}
+			}
+			const newsgroups = h.newsgroups;
+			if (newsgroups) {
+				// `messageCompose` window
+				yield newsgroups;
 			}
 		}
 		const converted = {

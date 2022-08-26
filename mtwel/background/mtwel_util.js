@@ -82,7 +82,8 @@ var mtwel_util = function mtwel_util_load() {
 			if (tabs == null || !(tabs.length > 0)) {
 				return undefined;
 			}
-			tabs = tabs.filter(t => t.type === "messageDisplay" || t.type === "mailTab");
+			tabs = tabs.filter(
+				t => t.type === "messageDisplay" || t.type === "mailTab" || t.type === "messageCompose");
 			return tabs.length > 0 ? tabs : undefined;
 		}
 

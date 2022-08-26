@@ -659,8 +659,10 @@ function orcopRenderMessageCard(msg, params) {
 	if (subject) {
 		other.push(E('div', { className: "card-subject" }, subject));
 	}
-	const href = 'mid:' + msg.messageID;
-	other.push( E("div", null, params?.active !== false ? E("a", { href }, href) : href));
+	if (msg.messageID) {
+		const href = 'mid:' + msg.messageID;
+		other.push( E("div", null, params?.active !== false ? E("a", { href }, href) : href));
+	}
 	return E('div', { className: "card" },
 		E('div', { className: "card-message-addresses" }, ...firstLine),
 		E('div', { className: "card-other" }, ...other));

@@ -27,32 +27,42 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 	 * https://bugzilla.mozilla.org/1758243
 	 * "Move message to new window creates spurious tab with folder list" 2022
 	 */
-	mtwel_msg_selection.getHighlightedMailTabIds = async function getHighlightedMailTabIds(tab) {
-		if (tab != null) {
-			if (typeof tab === "number") {
-				return [ tab ];
+	mtwel_msg_selection.getActionTabs = async function getActionTabs(info, tab) {
+		try {
+			const clickTabId = info?.tabId;
+			if (clickTabId >= 0) {
+				const clickTab = tab?.id === clickTabId ? tab : await browser.tabs.get(clickTabId);
+				if (clickTab?.id === clickTabId) {
+					return [ clickTab ];
+				}
+				console.warn(
+					"mtwel_msg_selection.getActionTabs: tabs.get returned wrong tab:",
+					clickTabId, clickTab);
 			}
-			const tabId = tab?.id;
-			if (tabId != null) {
-				return [ tabId ];
-			}
+		} catch (ex) {
+			console.warn(
+				"mtwel_msg_selection.getActionTabs: exception while processing clickData.tabId",
+				ex);
+		}
+		if (tab?.id >= 0) {
+			return [ tab ];
 		}
 
-		function _toIds(mailTabs) {
+		function _hasEntries(mailTabs) {
 			if (mailTabs == null || !(mailTabs.length > 0)) {
 				return undefined;
 			}
-			return mailTabs.map(t => t.id);
+			return mailTabs;
 		}
 
-		const tabs = _toIds(await mtwel_util.getHighlightedMailTabs()) ??
+		const tabs = _hasEntries(await mtwel_util.getHighlightedMailTabs()) ??
 			// Likely never used, it is fallback because it
 			// ignores `{ type: "messageDisplay" }` tabs
 			// and `{ highlighted: true }` option is not supported
 			// in Thunderbird-91, fix backported to Thunderbird-102.
 			// https://bugzilla.mozilla.org/1773977
 			// tabs.query({highlighted: true}): Error: An unexpected error occurred undefined
-			_toIds(await browser.mailTabs.query(
+			_hasEntries(await browser.mailTabs.query(
 				{ active: true, currentWindow: true, }));
 
 		if (tabs == null) {
@@ -68,18 +78,36 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 			return selectedMessages;
 		}
 
-		// info.tabId - messageDisplayAction
-		const argTabId = info?.tabId ?? tab?.id;
-		let tabIdArray = argTabId != null ?
-			[ argTabId ] :
-			await mtwel_msg_selection.getHighlightedMailTabIds(tab);
+		let tabArray = await mtwel_msg_selection.getActionTabs(info, tab);
 
-		if (tabIdArray == null) {
+		if (tabArray == null) {
 			throw new Error("Tab unknown, message list unavailable");
 		}
 		const retval = [];
 		const errors = [];
-		for (const tabId of tabIdArray) {
+		for (const tabA of tabArray) {
+			const tabId = tabA.id;
+			if (typeof tabId !== "number") {
+				console.warn(
+					"mtwel_msg_selection.getMessageHeaderArray: tab.id is not a number",
+					tabA);
+				continue;
+			}
+			if (tabA?.type === "messageCompose") {
+				try {
+					const composeDetails = await browser.compose.getComposeDetails(tabId);
+					if (composeDetails) {
+						retval.push(composeDetails);
+						continue;
+					}
+				} catch (ex) {
+					orco_common.addErrorStack(ex);
+					console.warn(
+						"mtwel_msg_selection: compose.getComposeDetails",
+						"will try fallback due to exception",
+						ex);
+				}
+			}
 			try {
 				// TB >= 78.4
 				selectedMessages = await browser.messageDisplay?.getDisplayedMessages?.(tabId);

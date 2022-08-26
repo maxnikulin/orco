@@ -50,6 +50,16 @@
 			"128": "icons/orco-128.png"
 		}
 	},
+	"compose_action": {
+		"browser_style": true,
+		"default_title": "__MSG_browserActionTitle__",
+		"default_popup": "orco_pages/orcop_popup.html",
+		"default_icon": {
+			"16": "icons/orco-16.png",
+			"32": "icons/orco-32.png",
+			"128": "icons/orco-128.png"
+		}
+	},
 	"commands": {
 		"orco-mentions": {
 			"description": "__MSG_cmdMentions__"
@@ -68,7 +78,7 @@
 	},
 	"permissions": [
 		"nativeMessaging", "menus", "storage",
-		"messagesRead"
+		"messagesRead", "compose"
 	],
 	"experiment_apis": {
 		"cucolapi": {

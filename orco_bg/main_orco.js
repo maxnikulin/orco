@@ -138,6 +138,43 @@ function orcoInitPubSub() {
 	browser.runtime.onConnect.addListener(gOrcoB.pubsub.onConnect);
 }
 
+function orcoOpenPopup(info, tab) {
+	const hasPopup = gOrcoB.pubsub.hasSubscribers("popupNotifications");
+	if (hasPopup && info === undefined && tab === undefined) {
+		con.log("ignore command (hotkey) while popup is open");
+		return;
+	}
+	try {
+		if (gOrcoB.mentions.notifySelfClick(info)) {
+			return;
+		}
+	} catch (ex) {
+		con.error("gOrcoB.mentions.notifySelfClick", ex);
+	}
+	// TODO log error, notice no `await` despite calls of `async` functions.
+	gOrcoB.mentions.storeMenusContext(info, tab);
+
+	// `browserAction.openPopup()` has no effect if the popup is already shown.
+	try {
+		if (hasPopup) {
+			gOrcoB.reloadPopup();
+		}
+	} catch (ex) {
+		con.error("gOrcoB.reloadPopup", ex);
+	}
+
+	// For Chrome `openPopup` is supported only for `action` API since manifest v3.
+	// `openPopup` must be executed from user action context,
+	// so no `await` is allowed before.
+	// There is no `browser_action` in `messageDisplay` windows,
+	// so `command` as menu item action is not possible.
+	// https://bugzilla.mozilla.org/1775246
+	// "browserAction buttons missed in messageDisplay windows"
+	browser.browserAction.openPopup();
+	browser.messageDisplayAction.openPopup();
+	browser.composeAction.openPopup();
+}
+
 function orcoInitMenuHandler() {
 	gOrcoB.mentions = new OrcoMentions(gOrcoB.MAX_MENTIONS_MESSAGES);
 	browser.menus.onClicked.addListener(
@@ -145,37 +182,7 @@ function orcoInitMenuHandler() {
 			if (info?.menuItemId !== "ORCO_MENTIONS") {
 				throw new Error(`Unsupported menu entry "${info?.menuItemId}"`);
 			}
-			try {
-				if (gOrcoB.mentions.notifySelfClick(info)) {
-					return;
-				}
-			} catch (ex) {
-				con.error("gOrcoB.mentions.notifySelfClick", ex);
-			}
-			// TODO log error, notice no `await` despite calls of `async` functions.
-			gOrcoB.mentions.storeMenusContext(info, tab);
-
-			// `browserAction.openPopup()` has no effect if the popup is already shown.
-			try { 
-				if (gOrcoB.pubsub.hasSubscribers("popupNotifications")) {
-					gOrcoB.reloadPopup();
-				}
-			} catch (ex) {
-				con.error("gOrcoB.reloadPopup", ex);
-			}
-
-			// For Chrome `openPopup` is supported only for `action` API since manifest v3.
-			// `openPopup` must be executed from user action context,
-			// so no `await` is allowed before.
-			// There is no `browser_action` in `messageDisplay` windows,
-			// so `command` as menu item action is not possible.
-			// https://bugzilla.mozilla.org/1775246
-			// "browserAction buttons missed in messageDisplay windows"
-			if (tab?.mailTab === false) {
-				browser.messageDisplayAction.openPopup();
-			} else {
-				browser.browserAction.openPopup();
-			}
+			orcoOpenPopup(info, tab);
 		});
 	// `_execute_browser_action` can not be used in manifest.
 	browser.commands.onCommand.addListener(
@@ -183,9 +190,7 @@ function orcoInitMenuHandler() {
 			if (command !== "orco-mentions") {
 				throw new Error(`Unsupported command "${command}"`);
 			}
-			gOrcoB.mentions.storeMenusContext(undefined, tab);
-			browser.messageDisplayAction.openPopup();
-			browser.browserAction.openPopup();
+			orcoOpenPopup(undefined, tab);
 		});
 }
 
