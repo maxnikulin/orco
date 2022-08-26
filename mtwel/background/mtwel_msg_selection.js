@@ -189,8 +189,11 @@ var mtwel_msg_selection = function mtwel_msg_selection_load() {
 			}
 		}
 		if (!(retval.length > 0)) {
-			if (errors.length > 0) {
-				throw new AggregateError(errors, "Get selected messages failed");
+			const failMsg = "Get selected messages failed";
+			if (errors.length === 1) {
+				throw new Error(failMsg, { cause: errors[0] });
+			} else if (errors.length > 0) {
+				throw new AggregateError(errors, failMsg);
 			}
 			if (
 				browser.messageDisplay == null &&
