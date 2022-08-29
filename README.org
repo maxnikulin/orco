@@ -18,21 +18,20 @@ for [[https://www.gnu.org/software/emacs/][GNU Emacs]].
 It adds a column to message list view displaying
 an icon for messages when their Message-ID's are mentioned
 in Org files (actually any text files with the same link format).
+It may show mentions of a message or a link in your notes.
 #+end_abstract
 
-* orco-0.3.0 highlights
+* orco-0.4.0 highlights
 
-- Context menu entry for message body to check if you have a link
-  in your notes.
-- A shortcut may be configured in add-on manager.
-  Unfortunately it is not the same as context menu item,
-  so =[Shift+F10]= and accelerator key (currently =n=, but I am going
-  to change it to =q= to have less alternative options)
-  may be more convenient.
+- Mentions popup page now shows message headers. Context menu item for a link
+  in the message body may display sender, date, subject in the popup
+  if you have the referenced message in your mail.
+- Popup size is fixed to avoid its jumps from left to right size.
+- Some other fixes.
 
 See <https://github.com/maxnikulin/orco/releases/>
 Already installed add-on should be updated unless it is disabled.
-[2022-06-28 Tue]
+[2022-08-29 Mon]
 
 * It is an alpha version
 
@@ -71,10 +70,15 @@ You may create your own one, but I do not consider API as settled,
 so tracking of changes may be a burden.
 Configure the helper and specify its ID (name) in the add-on configuration.
 
-Creating notes linked to messages is a subject of another add-on,
+Without a configured backend the usage of the extension is quite limited.
+It may still be helpful to display message headers for Message-ID links
+in the body of other messages in your mailboxes.
+
+Creating notes linked to messages is not fully supported yet,
 so this extension does not use
 [[https://orgmode.org/manual/Protocols.html][org-protocol]]
 ([[info:org#Protocols][info "(org) Protocols"]]).
+For a while you may copy =mid:= links from the mentions page in the popup.
 
 * Install
 
@@ -112,7 +116,7 @@ and for orco it is necessary to create a new native messaging application manife
 and a wrapper for =burl_backend= that serves as its configuration file.
 You need to provide paths to =burl_backend= and the wrapper,
 to specify files for link lookup, to choose a name for native messaging helper
-("burl" in the example below). Optionally add options like =-scheme news=
+("burl" in the example below). Optionally add more URI schemes like =-scheme news=
 (=mid:= and =https:= links are extracted by default)
 #+begin_example
   mkdir -p ~/.mozilla/native-messaging-hosts
@@ -159,9 +163,7 @@ Alternatively use =C-c C-r= that is a binding for =M-x= [[help:org-reveal][org-r
 For details see
 [[https://support.mozilla.org/kb/permission-request-messages-thunderbird-extensions][Permission request messages for Thunderbird extensions]]
 
-#+begin_quote
-Have full, unrestricted access to Thunderbird, and your computer
-#+end_quote
+** Have full, unrestricted access to Thunderbird, and your computer
 
 WebExtensions API for add-ons does not provide a way to add custom columns,
 so low level access using
@@ -175,15 +177,37 @@ messages and threads by querying content of the Message-ID header.
 
 Other permissions are hidden behind the most important one.
 
-Exchange messages with other programs (=nativeMessaging=)
+** Exchange messages with other programs (=nativeMessaging=)
 
 It is actual way to make requests related to file content or
 to open particular location in Emacs.  Explicit configuration
 is required to allow native messaging helper, but it is
 essential as well.
 
-"messagesRead" to obtain list of selected or displayed messages in response to
-browser action click. Otherwise use context menu item to check mentions.
+** Read your email messages and mark or tag them (=messagesRead=)
+
+It is used to obtain list of selected or displayed messages in response to
+browser action click, shortcut, context menu and obtain message headers.
+Otherwise the extension would have rather limited ability to check mentions
+in your notes.
+
+** Read and modify your email messages as you compose and send them (=compose=)
+
+Compose message window is a rather specific instance, so =messagesRead=
+permission suitable for message display or 3 pane tabs is not enough
+to get headers of the message while it is composed.
+
+Notice that the extension does not use
+"Send composed email messages on your behalf" (=compose.send=)
+or =compose.save=. permissions.
+
+# compose.save (unused) is not supported by Thunderbird-91
+
+** =menus= and =storage=
+
+These permissions are skipped in the add-on manager. They are necessary
+to get access for creation of menu entry and to save extension configuration
+accordingly.
 
 * Troubleshooting
 
