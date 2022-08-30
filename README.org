@@ -7,7 +7,7 @@ Allows to see which mail messages are mentioned in your notes.
 
 #+attr_html: :alt Screenshot of orco in action: icons in message list and links to notes displayed in popup
 #+attt_html: :max-width 100%
-[[file:screenshots/orco-msg-menu-collage.png]]
+[[file:screenshots/orco-0.4.0-link-popup.png]]
 
 #+begin_abstract
 orco is an extension for the
