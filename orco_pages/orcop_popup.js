@@ -683,7 +683,10 @@ function orcopRenderLinkCard(link, params) {
 				"span",
 				{ className: "icon", "aria-label": "Link", rel: "icon" },
 				"\u{1F517}" /* Link */),
-			E("span", null, params?.active !== false ? E("a", { href }, href) : href),
+			E("span", null,
+				params?.active !== false
+				? E("a", { href, rel: "noopener noreferrer" }, href)
+				: href),
 		];
 		return E('div', { className: "card" },
 			E('div', { className: "card-link" }, ...header));
