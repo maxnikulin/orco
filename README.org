@@ -1,10 +1,15 @@
 
-#+PROPERTY: header-args :eval never-export :exports code :results silent
 #+title: orco — Org Mode column, a Thunderbird add-on
+# - Disable subscript/superscripts since org-ruby ignores
+#   markers around whole link description.
+# - Enable footnotes
+#+OPTIONS: ^:nil f:t
+#+PROPERTY: header-args :eval never-export :exports code :results silent
 #+description: Allows to see which mail messages are mentioned in your notes.
 
 Allows to see which mail messages are mentioned in your notes.
 
+# Attributes are ignored by org-ruby
 #+attr_html: :alt Screenshot of orco in action: icons in message list and links to notes displayed in popup
 #+attt_html: :max-width 100%
 [[file:screenshots/orco-0.4.0-link-popup.png]]
@@ -77,7 +82,7 @@ in the body of other messages in your mailboxes.
 Creating notes linked to messages is not fully supported yet,
 so this extension does not use
 [[https://orgmode.org/manual/Protocols.html][org-protocol]]
-([[info:org#Protocols][info "(org) Protocols"]]).
+([[info:org#Protocols][info \quot(org) Protocols\quot]]).
 For a while you may copy =mid:= links from the mentions page in the popup.
 
 * Install
@@ -86,7 +91,7 @@ I am going to publish orco add-on to the Thunderbird extension catalog later.
 For a while download the latest release as an =.xpi= file
 from the releases section of the GitHub project
 <https://github.com/maxnikulin/orco/releases/>
-and use "install from file" option in the add-on management tab.
+and use the "install from file" option in the add-on management tab.
 Alternatively a repository clone may be loaded as a temporary extension
 from the add-on debugging tab. Thunderbird removes column state from
 folder views when temporary add-on is not loaded, so it may be inconvenient.
@@ -133,7 +138,7 @@ configuration.
 
 Open Thunderbird add-on settings for orco and specify "burl" (or the name
 you have chosen on the previous step) as native messaging helper.
-If you have messages linked to emacs-orgmode mail list archive at
+If you have messages linked to the emacs-orgmode mail list archive at
 <https://list.orgmode.org/> than you may add this URL to the list
 of prefixes.
 
@@ -145,7 +150,7 @@ To open particular locations in the files where the message is mentioned
 Emacs server should be running: [[elisp:(server-start)][M-x server-start]]
 For background see
 [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Emacs-Server.html][Server]]
-([[info:emacs#Emacs Server][info "(emacs) Emacs Server"]]).
+([[info:emacs#Emacs Server][info \quot(emacs) Emacs Server\quot]]).
 
 Link may be hidden inside a folded heading.
 To open it you may try the following hook:
@@ -214,7 +219,7 @@ accordingly.
 The copy button on the log page of the popup puts to clipboard more details
 than it is shown in the popup.
 
-Check Thunderbirbird console =Ctrl+Shift+J= for errors, open add-on debugging tab
+Check Thunderbird console =Ctrl+Shift+J= for errors, open add-on debugging tab
 and click on "Inspect" link to get access to developers tools for the extension
 and switch to console to see if some problem is reported there.
 
@@ -224,9 +229,9 @@ For native messaging backend problems see the related section in Mozilla
 * License
 
 orco is published under [[https://www.gnu.org/licenses/gpl-3.0.html][the GNU GPLv3 license]] or any later
-version. See the [[file:LICENSE.txt]] file in this directory.
+version, see [[file:LICENSE.txt][LICENSE.txt]].
 
 #+attr_html: :alt orco icon
 [[file:icons/orco-128.png]]
 
-# LocalWords: LinkRemark Thunderbird bURL backend orco
+# LocalWords: LinkRemark Thunderbird bURL backend orco popup
