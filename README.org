@@ -26,7 +26,7 @@ in Org files (actually any text files with the same link format).
 It may show mentions of a message or a link in your notes.
 #+end_abstract
 
-* orco-0.4.0 highlights
+** orco-0.4.0 highlights
 
 - Mentions popup page now shows message headers. Context menu item for a link
   in the message body may display sender, date, subject in the popup
@@ -38,7 +38,7 @@ See <https://github.com/maxnikulin/orco/releases/>
 Already installed add-on should be updated unless it is disabled.
 [2022-08-29 Mon]
 
-* It is an alpha version
+** It is an alpha version
 
 Compatibility: Thunderbird-91 and above.
 
@@ -55,7 +55,7 @@ The extension does not add or modify message headers
 to reflect presence in your notes. Depending on your workflow
 it may be an advantage or in some cases perhaps a defect.
 
-* Introduction
+** Introduction
 
 To see how it works you should have some references to messages
 in your notes.
@@ -85,7 +85,7 @@ so this extension does not use
 ([[info:org#Protocols][info \quot(org) Protocols\quot]]).
 For a while you may copy =mid:= links from the mentions page in the popup.
 
-* Install
+** Install
 
 I am going to publish orco add-on to the Thunderbird extension catalog later.
 For a while download the latest release as an =.xpi= file
@@ -163,12 +163,12 @@ To open it you may try the following hook:
 #+end_src
 Alternatively use =C-c C-r= that is a binding for =M-x= [[help:org-reveal][org-reveal]].
 
-* Permissions
+** Permissions
 
 For details see
 [[https://support.mozilla.org/kb/permission-request-messages-thunderbird-extensions][Permission request messages for Thunderbird extensions]]
 
-** Have full, unrestricted access to Thunderbird, and your computer
+*** Have full, unrestricted access to Thunderbird, and your computer
 
 WebExtensions API for add-ons does not provide a way to add custom columns,
 so low level access using
@@ -182,21 +182,21 @@ messages and threads by querying content of the Message-ID header.
 
 Other permissions are hidden behind the most important one.
 
-** Exchange messages with other programs (=nativeMessaging=)
+*** Exchange messages with other programs (=nativeMessaging=)
 
 It is actual way to make requests related to file content or
 to open particular location in Emacs.  Explicit configuration
 is required to allow native messaging helper, but it is
 essential as well.
 
-** Read your email messages and mark or tag them (=messagesRead=)
+*** Read your email messages and mark or tag them (=messagesRead=)
 
 It is used to obtain list of selected or displayed messages in response to
 browser action click, shortcut, context menu and obtain message headers.
 Otherwise the extension would have rather limited ability to check mentions
 in your notes.
 
-** Read and modify your email messages as you compose and send them (=compose=)
+*** Read and modify your email messages as you compose and send them (=compose=)
 
 Compose message window is a rather specific instance, so =messagesRead=
 permission suitable for message display or 3 pane tabs is not enough
@@ -208,13 +208,13 @@ or =compose.save=. permissions.
 
 # compose.save (unused) is not supported by Thunderbird-91
 
-** =menus= and =storage=
+*** =menus= and =storage=
 
 These permissions are skipped in the add-on manager. They are necessary
 to get access for creation of menu entry and to save extension configuration
 accordingly.
 
-* Troubleshooting
+** Troubleshooting
 
 The copy button on the log page of the popup puts to clipboard more details
 than it is shown in the popup.
@@ -226,7 +226,7 @@ and switch to console to see if some problem is reported there.
 For native messaging backend problems see the related section in Mozilla
 [[https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging#Troubleshooting][developer guide]]
 
-* License
+** License
 
 orco is published under [[https://www.gnu.org/licenses/gpl-3.0.html][the GNU GPLv3 license]] or any later
 version, see [[file:LICENSE.txt][LICENSE.txt]].
