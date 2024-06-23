@@ -128,8 +128,13 @@ var CuColAPI_Extension = {
 	registerWindowListener(listenerId, windowListener) {
 		const retval = ExtensionSupport.registerWindowListener(listenerId, windowListener);
 		this._listeners.set(listenerId, windowListener);
+		return retval;
 	},
 	unregisterWindowListener(listenerId, props) {
+		const windowListener = this._listeners.get(listenerId);
+		if (windowListener === undefined) {
+			return false;
+		}
 		// While `registerWindowListener` iterates over open windows,
 		// `unregisterWindowListener` does not do it.
 		const existing = !props || !("existing" in props) ? true : props.existing;
@@ -160,6 +165,9 @@ var CuColAPI_Extension = {
 			throw errors[0];
 		} else if (errors.length > 1) {
 			throw new AggregateError(errors, "CuColAPI_Extension.unregisterWindowListener failed");
+		}
+		if (retval) {
+			this._listeners.delete(listenerId);
 		}
 		return retval;
 	},
@@ -204,9 +212,6 @@ var windowListener = {
 		}
 		columnRegistry.removeWindowColumns(win);
 	},
-	// Allow `CuColAPI_Extension.unregisterWindowListener()` to catch wrong ID,
-	// but do not report an error during development due to failed loading.
-	_registered: false,
 };
 
 var columnRegistry = {
@@ -420,7 +425,6 @@ var columnRegistry = {
 				con.debug("register window listener");
 				// QNote uses `Services.ww.registerNotification(API.WindowObserver);`
 				CuColAPI_Extension.registerWindowListener(extensionId, windowListener);
-				windowListener._registered = true;
 			} catch (ex) {
 				con.error("addExtensionColumns: registerWindowListener", ex);
 				errors.push(ex);
@@ -474,13 +478,14 @@ var columnRegistry = {
 		if (columnDescriptors.length === 0 || idSet.size === this._registry.size) {
 			con.debug("unregister window listener");
 			try {
-				if (windowListener._registered) {
-					CuColAPI_Extension.unregisterWindowListener(extensionId);
-				} else if (this._registry.size !== 0) {
+				if (
+					!CuColAPI_Extension.unregisterWindowListener(extensionId)
+					&& this._registry.size !== 0
+				) {
 					con.error(
 						"Internal error:" +
-						" Not calling CuColAPI_Extension.unregisterWindowListener" +
-						" because listener was not registered");
+						" CuColAPI_Extension.unregisterWindowListener:" +
+						" listener was not registered");
 				}
 			} catch (ex) {
 				con.error(ex);
