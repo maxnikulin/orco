@@ -26,40 +26,63 @@ var con = {
 	LOG: 2,
 	WARN: 3,
 	ERROR: 4,
-	level: 2,
-	message(logger, format, ...args) {
-		const tag = this.tag;
-		if (tag === undefined || tag === null || tag === "") {
-			logger(format, ...args);
-		} else if (typeof format === "string") {
-			logger(tag + ": " + format, ...args);
-		} else {
-			logger(tag, format, ...args);
-		}
-	},
+	_level: 2,
+
 	drop() {},
-	init(tag, level = 2) {
-		this.tag = tag;
-		if (typeof level === "string") {
-			level = this[level.toUpperCase()];
-		}
-		level = level === undefined ? this.LOG : level;
+	init(tag, level = 20) {
+		this._tag = this._tagValue(tag);
+		// implicit reconfigure
 		this.level = level;
+		return this;
+	},
+	get tag() {
+		return this._tag;
+	},
+	set tag(tag) {
+		this._tag = this._tagValue(tag);
+		this._reconfigure();
+	},
+	get level() {
+		return this._level;
+	},
+	set level(level) {
+		const value = (typeof level === "string")
+			? this[level.toUpperCase()] : level;
+		if (typeof value === "number") {
+			this._level = value;
+		} else {
+			console.warn(`MwelConsole ${this._tag}: incorrect level`, level);
+			this._level =this.LOG;
+		}
+		this._reconfigure();
+	},
+	_tagValue(tag) {
+		if (tag === undefined || tag === null || tag === "") {
+			return undefined;
+		} else if (typeof tag !== "string") {
+			console.warn("MwelConsole: incorrect tag type", tag);
+			return undefined;
+		}
+		return tag;
+	},
+	_reconfigure() {
+		const level = this._level;
+		const args = [console];
+		const tag = this._tag;
+		if (tag !== undefined) {
+			args.push(tag);
+		}
 		for (const name of ['debug', 'info', 'log', 'warn', 'error']) {
 			const loggerLevel = this[name.toUpperCase()];
-			const func = this.message.bind(this, console[name].bind(console));
 			Object.defineProperty(this, name, {
-				get: () => {
-					if (loggerLevel < this.level) {
-						return this.drop;
-					}
-					return func;
-				},
+				value: loggerLevel < level
+					? this.drop : console[name].call.bind(console[name], ...args),
 				enumerable: true,
+				configurable: true,
 			});
 		}
 	},
-};
+}.init();
 
 con.init("CuColAPI", "INFO");
 
