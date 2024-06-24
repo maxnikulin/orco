@@ -212,7 +212,7 @@ var windowListener = {
 	},
 };
 
-class CuColAPI_LegacyColumnRegistry {
+class CuColAPI_BaseColumnRegistry {
 	_registry = new Map();
 
 	constructor() {
@@ -231,6 +231,9 @@ class CuColAPI_LegacyColumnRegistry {
 	getColumnId(propsId) {
 		return this.columnPrefix + propsId;
 	};
+};
+
+class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 	addColumnHandlers(dbView) {
 		for (const [id, props] of this._registry.entries()) {
 			try {
