@@ -88,8 +88,6 @@ con.init("CuColAPI", "INFO");
 
 con.debug("loading...");
 
-// initialized when `getAPI()` is invoked, allows to avoid hard-coded value
-let extensionId;
 
 /** Unlike `ExtensionSupport` calls `onUnloadWindow` for each existing window
  * when `unregisterWindowListener` is invoked. `registerWindowListener`
@@ -155,7 +153,7 @@ var CuColAPI_Extension = {
 		}
 		let retval;
 		try {
-			retval = ExtensionSupport.unregisterWindowListener(extensionId);
+			retval = ExtensionSupport.unregisterWindowListener(listenerId);
 		} catch (ex) {
 			con.error(ex);
 			errors.push("CuColAPI_Extension.unregisterWindowListener", ex);
@@ -216,11 +214,20 @@ var windowListener = {
 
 class CuColAPI_LegacyColumnRegistry {
 	_registry = new Map();
-	_extensionIdFallback = "CuColAPI-uninitialized";
 
+	constructor() {
+		this.setExtensionId("CuColAPI-uninitialized");
+	};
+	setExtensionId(id) {
+		if (typeof id !== "string" || id === "") {
+			con.warn("Invalid extensionId", id);
+			return;
+		}
+		this.extensionId = id;
+	};
 	/// Add extension ID to avoid conflicts due to same column name used by different extensions.
 	getColumnId(propsId) {
-		return (extensionId || this._extensionId) + '-' + propsId;
+		return this.extensionId + '-' + propsId;
 	};
 	addColumnHandlers(dbView) {
 		for (const [id, props] of this._registry.entries()) {
@@ -424,7 +431,7 @@ class CuColAPI_LegacyColumnRegistry {
 				}
 				con.debug("register window listener");
 				// QNote uses `Services.ww.registerNotification(API.WindowObserver);`
-				CuColAPI_Extension.registerWindowListener(extensionId, windowListener);
+				CuColAPI_Extension.registerWindowListener(this.extensionId, windowListener);
 			} catch (ex) {
 				con.error("addExtensionColumns: registerWindowListener", ex);
 				errors.push(ex);
@@ -433,7 +440,8 @@ class CuColAPI_LegacyColumnRegistry {
 		} else {
 			try {
 				CuColAPI_Extension.forEachWindow(
-					extensionId, win => this.addWindowColumns(win, filteredDescriptors));
+					this.extensionId,
+					win => this.addWindowColumns(win, filteredDescriptors));
 			} catch (ex) {
 				con.error("add to existing windows", ex);
 				errors.push(ex);
@@ -479,7 +487,7 @@ class CuColAPI_LegacyColumnRegistry {
 			con.debug("unregister window listener");
 			try {
 				if (
-					!CuColAPI_Extension.unregisterWindowListener(extensionId)
+					!CuColAPI_Extension.unregisterWindowListener(this.extensionId)
 					&& this._registry.size !== 0
 				) {
 					con.error(
@@ -495,7 +503,8 @@ class CuColAPI_LegacyColumnRegistry {
 		} else {
 			try {
 				CuColAPI_Extension.forEachWindow(
-					extensionId, win => this.removeWindowColumns(win, idSet));
+					this.extensionId,
+					win => this.removeWindowColumns(win, idSet));
 			} catch (ex) {
 				con.error("remove from existing windows", ex);
 				errors.push(ex);
@@ -534,7 +543,8 @@ class CuColAPI_LegacyColumnRegistry {
 		if (updateMessageIDs.size > 0) {
 			try {
 				CuColAPI_Extension.forEachWindow(
-					extensionId, win => this.updateWindowColumns(win, updateMessageIDs));
+					this.extensionId,
+					win => this.updateWindowColumns(win, updateMessageIDs));
 			} catch (ex) {
 				con.error("columnRegistry.updateExtensionColumns: windows", ex);
 				errors.push(ex);
@@ -705,8 +715,9 @@ var columnRegistry =
 
 class CuColAPI extends ExtensionCommon.ExtensionAPI {
 	getAPI(context) {
-		con.debug("getAPI...");
-		extensionId = context.extension.id;
+		const id = context?.extension?.id;
+		con.debug("getAPI", id);
+		columnRegistry.setExtensionId(id);
 		// TODO schema description:
 		// https://hg.mozilla.org/comm-central/file/tip/mail/components/extensions/schemas/menus.json
 		return {
@@ -731,12 +742,10 @@ class CuColAPI extends ExtensionCommon.ExtensionAPI {
 			return;
 		}
 		// full-address-column does it in `close()` (needs activation).
-		if (extensionId) {
-			try {
-				columnRegistry.removeExtensionColumns();
-			} catch (ex) {
-				con.error("onShutdown: error", ex);
-			}
+		try {
+			columnRegistry.removeExtensionColumns();
+		} catch (ex) {
+			con.error("onShutdown: error", ex);
 		}
 	}
 }
