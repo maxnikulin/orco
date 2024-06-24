@@ -224,10 +224,12 @@ class CuColAPI_LegacyColumnRegistry {
 			return;
 		}
 		this.extensionId = id;
+		// Used in CSS selectors.
+		this.columnPrefix = id.replaceAll(/\W/g, "-") + "-";
 	};
 	/// Add extension ID to avoid conflicts due to same column name used by different extensions.
 	getColumnId(propsId) {
-		return this.extensionId + '-' + propsId;
+		return this.columnPrefix + propsId;
 	};
 	addColumnHandlers(dbView) {
 		for (const [id, props] of this._registry.entries()) {
