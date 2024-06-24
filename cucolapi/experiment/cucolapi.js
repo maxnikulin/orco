@@ -231,6 +231,40 @@ class CuColAPI_BaseColumnRegistry {
 	getColumnId(propsId) {
 		return this.columnPrefix + propsId;
 	};
+	validateColumnDescriptors(columnDescriptors, onError = undefined) {
+		const idSet = new Set(this._registry.keys());
+		if (!Array.isArray(columnDescriptors)) {
+			columnDescriptors = [ columnDescriptors ];
+		}
+		return columnDescriptors.filter(function _validateColumnDescriptors_filter(d) {
+			try {
+				let id = d?.id;
+				if (id == null) {
+					throw new TypeError("Column ID is null");
+				}
+				id = String(id);
+				if (id === "") {
+					throw new TypeError("Column ID is empty string");
+				}
+				if (idSet.has(id)) {
+					throw new Error(`Column ID "${id}" already exists`);
+				}
+				idSet.add(id);
+				return true;
+			} catch (ex) {
+				try {
+					if (onError) { 
+						onError(ex);
+						return;
+					}
+				} catch (exOnError) {
+					console.log(exOnError);
+				}
+				console.log(ex);
+			}
+			return false;
+		});
+	};
 };
 
 class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
@@ -398,25 +432,13 @@ class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 	};
 
 	addExtensionColumns(columnDescriptors, columnDataMap) {
-		const idSet = new Set(this._registry.keys());
 		const errors = [];
-		if (!Array.isArray(columnDescriptors)) {
-			columnDescriptors = [ columnDescriptors ];
-		}
-		const filteredDescriptors = columnDescriptors.filter(function _addExtensionColumns_filter(d) {
+		let filteredDescriptors = this.validateColumnDescriptors(
+			columnDescriptors,
+			ex => { console.log(ex); errors.push(ex) }
+		);
+		filteredDescriptors = filteredDescriptors.filter(function _addExtensionColumns_handlers(d) {
 			try {
-				let id = d?.id;
-				if (id == null) {
-					throw new TypeError("Column ID is null");
-				}
-				id = String(id);
-				if (id === "") {
-					throw new TypeError("Column ID is empty string");
-				}
-				if (idSet.has(id)) {
-					throw new Error(`Column ID "${id}" already exist`);
-				}
-				idSet.add(id);
 				const dataEntries = columnDataMap?.[d.id]
 				// TODO functions can not be just passed from background page.
 				// Check `menus` implementation.
