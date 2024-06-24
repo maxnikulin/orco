@@ -214,14 +214,14 @@ var windowListener = {
 	},
 };
 
-var columnRegistry = {
-	_registry: new Map(),
-	_extensionIdFallback: "CuColAPI-uninitialized",
+class CuColAPI_LegacyColumnRegistry {
+	_registry = new Map();
+	_extensionIdFallback = "CuColAPI-uninitialized";
 
 	/// Add extension ID to avoid conflicts due to same column name used by different extensions.
 	getColumnId(propsId) {
 		return (extensionId || this._extensionId) + '-' + propsId;
-	},
+	};
 	addColumnHandlers(dbView) {
 		for (const [id, props] of this._registry.entries()) {
 			try {
@@ -232,7 +232,7 @@ var columnRegistry = {
 				con.error("columnRegistry.addColumnHandlers", id, ex);
 			}
 		}
-	},
+	};
 	removeColumnHandlers(dbView, columns) {
 		const iter = columns
 			? columns.map(props => [ props.id, props ])
@@ -247,7 +247,7 @@ var columnRegistry = {
 				con.error("columnRegistry.removeColumnHandlers", id, ex);
 			}
 		}
-	},
+	};
 	addColumn(win, properties) {
 		// http://udn.realityripple.com/docs/Mozilla/Thunderbird/Thunderbird_extensions/Creating_a_Custom_Column
 		// TODO add splitter?
@@ -323,7 +323,7 @@ var columnRegistry = {
 		} catch (ex) {
 			con.error("addColumn: failed to immediately add handler", id);
 		}
-	},
+	};
 	addWindowColumns(win, columns = undefined) {
 		con.debug("adding columns to a window", !!columns);
 		const iter = columns || this._registry.values();
@@ -334,7 +334,7 @@ var columnRegistry = {
 				con.error("addColumn: failed", props?.id, ex, win?.location);
 			}
 		}
-	},
+	};
 
 	/// Called from `removeExtensionColumns` or from `windowListener.onUnloadWindow`.
 	// In the latter case it may happen on window close or
@@ -363,7 +363,7 @@ var columnRegistry = {
 				con.error("remove window column failed", fullId || id, ex);
 			}
 		}
-	},
+	};
 	updateWindowColumns(win, messageIDs) {
 		const dbView = win.gDBView;
 		if (!dbView) {
@@ -383,7 +383,7 @@ var columnRegistry = {
 				con.error("updateWindowColumns", ex);
 			}
 		}
-	},
+	};
 
 	addExtensionColumns(columnDescriptors, columnDataMap) {
 		const idSet = new Set(this._registry.keys());
@@ -448,7 +448,7 @@ var columnRegistry = {
 			throw errors[0];
 		}
 		throw new AggregateError(errors, "Failed to remove colunms");
-	},
+	};
 
 	/** `null` or empty array means remove all.
 	 * Removes windows listener if no column remained. */
@@ -510,7 +510,7 @@ var columnRegistry = {
 			throw errors[0];
 		}
 		throw new AggregateError(errors, "Failed to remove colunms");
-	},
+	};
 	updateExtensionColumns(columnDataMap) {
 		const errors = [];
 		const updateMessageIDs = new Set();
@@ -548,7 +548,7 @@ var columnRegistry = {
 			throw errors[0];
 		}
 		throw new AggregateError(errors, "Failed to update colunms");
-	},
+	};
 };
 
 //
@@ -699,6 +699,9 @@ var columnHandlerInstaller = {
 		columnRegistry.removeColumnHandlers(aFolderDisplay.view.dbView);
 	},
 }
+
+var columnRegistry =
+	new CuColAPI_LegacyColumnRegistry();
 
 class CuColAPI extends ExtensionCommon.ExtensionAPI {
 	getAPI(context) {
