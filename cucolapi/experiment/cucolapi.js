@@ -18,7 +18,7 @@
 "use strict";
 
 var { ExtensionSupport } = ChromeUtils.import("resource:///modules/ExtensionSupport.jsm");
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var Services = Services ?? ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
 
 var con = {
 	DEBUG: 0,
@@ -86,7 +86,23 @@ var con = {
 
 con.init("CuColAPI", "INFO");
 
-con.debug("loading...");
+const { ThreadPaneColumns } = function() {
+	for (const module of [
+		"chrome://messenger/content/ThreadPaneColumns.mjs", // v128
+		"chrome://messenger/content/thread-pane-columns.mjs", // v115.10
+	]) {
+		try {
+			const m = ChromeUtils.importESModule(module);
+			console.log("ThreadPaneColumns", module);
+			return m;
+		} catch (ex) {
+			console.log("ThreadPaneColumns", module, ex);
+		}
+	}
+	return undefined;
+}();
+
+con.log("loading", ThreadPaneColumns === undefined ? "legacy" : "native");
 
 /// A helper to throw either simple or AggregateError.
 function only(array) {
@@ -96,7 +112,9 @@ function only(array) {
 
 /** Unlike `ExtensionSupport` calls `onUnloadWindow` for each existing window
  * when `unregisterWindowListener` is invoked. `registerWindowListener`
- * iterates over existing windows for both objects. */
+ * iterates over existing windows for both objects.
+ *
+ * TODO Not used in Thunderbird-115. */
 var CuColAPI_Extension = {
 	_listeners: new Map(),
 	forEachWindow(listenerId, callback) {
@@ -187,6 +205,7 @@ function mapDifferenceKeys(map1, map2) {
 
 // Should be passed to `CuColAPI_Extension` since `ExtensionSupport` does not
 // call `onUnloadWindow` in response to `unregisterWindowListener`.
+// TODO Not used in Thunderbird-115.
 var windowListener = {
 	// 3pane windows
 	chromeURLs: [
@@ -306,6 +325,7 @@ class CuColAPI_BaseColumnRegistry {
 	};
 };
 
+// TODO Not used in Thunderbird-115.
 class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 	addColumnHandlers(dbView) {
 		for (const [id, props] of this._registry.entries()) {
@@ -604,7 +624,6 @@ class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 	};
 };
 
-//
 // - TODO: "image" `valueType` (redefine 'isString)
 // - TODO: "mixed" as "image"/"text" `valueType`
 // - TODO: mapping for sort threads (instance per gDBView)
@@ -612,6 +631,8 @@ class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 // - TODO: `MessageHDR.getTextHeader()` in mapping
 // https://searchfox.org/comm-central/source/mozilla/layout/xul/tree/nsITreeView.idl
 // https://searchfox.org/comm-central/source/mailnews/base/public/nsIMsgCustomColumnHandler.idl
+//
+// TODO Not used in Thunderbird-115.
 class CuColAPI_ColumnHandler {
 	constructor(props, data) {
 		this._data = data || new Map();
@@ -628,7 +649,7 @@ class CuColAPI_ColumnHandler {
 				this.getSortStringForRow = this._makeGetter(props.mapping, false);
 				break;
 			default:
-				throw new Error(`Unknown mapping.valueType "${props.mapping.valueType}a"`);
+				throw new Error(`Unknown mapping.valueType "${props.mapping.valueType}"`);
 		}
 		// http://udn.realityripple.com/docs/Mozilla/Thunderbird/Thunderbird_extensions/Creating_a_Custom_Column#The_Column_Handler
 		// Warning! Do not get confused between `GetCellText()` and
@@ -740,6 +761,7 @@ class CuColAPI_ColumnHandler {
 
 
 // Relies on `columnRegistry`
+// TODO Not used in Thunderbird-115.
 var columnHandlerInstaller = {
 	onActiveCreatedView(aFolderDisplay) {
 		con.debug("columnHandlerInstaller.onActiveCreatedView",
@@ -753,8 +775,136 @@ var columnHandlerInstaller = {
 	},
 }
 
-var columnRegistry =
-	new CuColAPI_LegacyColumnRegistry();
+// CustomColumnProperties
+// in mail/base/content/modules/ThreadPaneColumns.mjs
+class CuColAPI_NativeColumnHandler {
+	constructor(props, data) {
+		this.name = props.label;
+		this.hidden = props.hidden ?? true;
+		this.icon = false; // TODO
+		// this.iconCellDefinition
+		// this.iconHeaderUrl
+		// this.iconCallback
+		if (!this.icon) {
+			this.resizable = true; // TODO column is too wide for a couple of characters.
+		} else if (props.fixed != null) {
+			this.resizable = !props.fixed;
+		}
+		this.sortable = props.sortable != null ? props.sortable : true;
+		this._data = data || new Map();
+		this._display = props.mapping.display;
+		if (this._display == null || typeof this._display !== 'object') {
+			throw new TypeError("mapping.display must be an Object");
+		}
+		switch (props.mapping.valueType) {
+			case "text":
+				this.textCallback = this._makeGetter(props.mapping);
+				break;
+			default:
+				throw new Error(`Unknown mapping.valueType "${props.mapping.valueType}"`);
+		}
+	}
+	setData(data) {
+		const old = this._data;
+		this._data = data || new Map();
+		// TODO Is it possible to refresh selected values?
+		// return mapDifferenceKeys(old, this._data);
+	}
+	// Unlike in the case of the legacy handler, sort function receives header as well
+	_makeGetter(mapping) {
+		const { field } = mapping;
+		const name = "_cucolapi_getter_" + field;
+		return {
+			[name]: function(field, messageHdr) {
+				const key = messageHdr && messageHdr[field];
+				if (key === undefined) {
+					return "";
+				}
+				let value = this._data.get(key);
+				// TODO Is it possible to check whole thread?
+				// Downwards Arrow with Tip Rightwards
+				// sub = "\u21b3";
+				return this._display[value] ?? "";
+			},
+		}[name]
+			// Object passed to addCustomColumn is ignored,
+			// just some properties are picked from it.
+			.bind(this, field);
+	}
+};
+
+class CuColAPI_NativeColumnRegistry extends CuColAPI_BaseColumnRegistry {
+	addExtensionColumns(columnDescriptors, columnDataMap) {
+		const errors = [];
+		const filteredDescriptors = this.validateColumnDescriptors(
+			columnDescriptors,
+			ex => { console.log(ex); errors.push(ex); }
+		);
+		for (const descriptor of filteredDescriptors) {
+			try {
+				const dataEntries = columnDataMap?.[descriptor.id];
+				const handler = descriptor.handler
+					= new CuColAPI_NativeColumnHandler(
+						descriptor, dataEntries && new Map(dataEntries));
+				ThreadPaneColumns.addCustomColumn(this.getColumnId(descriptor.id), handler);
+				this._registry.set(descriptor.id, descriptor);
+			} catch (ex) {
+				console.log(ex);
+				errors.push(ex);
+			}
+		}
+		if (!(errors.length === 0)) {
+			throw only(errors) ?? new AggregateError(errors, "Failed to add columns");
+		}
+		return true;
+	};
+	removeExtensionColumns(columnDescriptors = undefined) {
+		const errors = [];
+		const removeIds = this.validateRemoveColumns(
+			columnDescriptors,
+			ex => { console.log(ex); errors.push(ex); }
+		);
+		for (const c of removeIds) {
+			try {
+				ThreadPaneColumns.removeCustomColumn(this.getColumnId(c));
+			} catch (ex) {
+				console.log(ex);
+				errors.push(ex);
+			}
+		}
+		if (!(errors.length === 0)) {
+			throw only(errors) ?? new AggregateError(errors, "Failed to remove columns");
+		}
+		return true;
+	};
+	updateExtensionColumns(columnDataMap) {
+		const errors = [];
+		for (const [key, keyValue] of Object.entries(columnDataMap)) {
+			try {
+				const descriptor = this._registry.get(key);
+				if (!descriptor) {
+					throw new Error(`Unknown column "${key}"`);
+				}
+				if (!descriptor.handler.setData) {
+					continue;
+				}
+				descriptor.handler.setData(new Map(keyValue));
+				ThreadPaneColumns.refreshCustomColumn(this.getColumnId(descriptor.id));
+			} catch (ex) {
+				console.log(ex);
+				errors.push(ex);
+			}
+		}
+
+		if (!(errors.length === 0)) {
+			throw only(errors) ?? new AggregateError(errors, "Failed to update columns");
+		}
+		return true;
+	};
+}
+
+var columnRegistry = ThreadPaneColumns
+	? new CuColAPI_NativeColumnRegistry() : new CuColAPI_LegacyColumnRegistry();
 
 class CuColAPI extends ExtensionCommon.ExtensionAPI {
 	getAPI(context) {
