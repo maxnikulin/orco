@@ -460,7 +460,7 @@ class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 		} if (errors.length === 1) {
 			throw errors[0];
 		}
-		throw new AggregateError(errors, "Failed to remove colunms");
+		throw new AggregateError(errors, "Failed to add colunms");
 	};
 
 	/** `null` or empty array means remove all.
