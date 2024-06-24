@@ -88,6 +88,11 @@ con.init("CuColAPI", "INFO");
 
 con.debug("loading...");
 
+/// A helper to throw either simple or AggregateError.
+function only(array) {
+	return Array.isArray(array) && array?.length === 1
+		? array[0] : undefined;
+}
 
 /** Unlike `ExtensionSupport` calls `onUnloadWindow` for each existing window
  * when `unregisterWindowListener` is invoked. `registerWindowListener`
@@ -116,12 +121,10 @@ var CuColAPI_Extension = {
 				errors.push(ex);
 			}
 		}
-		if (errors.length === 0) {
-			return;
-		} else if (errors.length === 1) {
-			throw errors[0];
+		if (!(errors.length === 0)) {
+			throw only(errors) ?? new AggregateError(errors, "Exceptions while iterating over windows");
 		}
-		throw new AggregateError(errors, "Exceptions while iterating over windows");
+		return;
 	},
 	registerWindowListener(listenerId, windowListener) {
 		const retval = ExtensionSupport.registerWindowListener(listenerId, windowListener);
@@ -159,10 +162,9 @@ var CuColAPI_Extension = {
 			errors.push("CuColAPI_Extension.unregisterWindowListener", ex);
 		}
 		// FIXME almost certainly conversion to `ExtensionError` is required.
-		if (errors.length === 1) {
-			throw errors[0];
-		} else if (errors.length > 1) {
-			throw new AggregateError(errors, "CuColAPI_Extension.unregisterWindowListener failed");
+		if (!(errors.length === 0)) {
+			throw only(errors) ?? new AggregateError(
+				errors, "CuColAPI_Extension.unregisterWindowListener failed");
 		}
 		if (retval) {
 			this._listeners.delete(listenerId);
@@ -514,12 +516,10 @@ class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 				this._registry.set(String(descr.id), descr);
 			}
 		}
-		if (errors.length === 0) {
-			return true;
-		} if (errors.length === 1) {
-			throw errors[0];
+		if (!(errors.length === 0)) {
+			throw only(errors) ?? new AggregateError(errors, "Failed to add columns");
 		}
-		throw new AggregateError(errors, "Failed to add colunms");
+		return true;
 	};
 
 	/** `null` or empty array means remove all.
@@ -560,12 +560,10 @@ class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 				this._registry.delete(id);
 			}
 		}
-		if (errors.length === 0) {
-			return true;
-		} if (errors.length === 1) {
-			throw errors[0];
+		if (!(errors.length === 0)) {
+			throw only(errors) ?? new AggregateError(errors, "Failed to remove columns");
 		}
-		throw new AggregateError(errors, "Failed to remove colunms");
+		return true;
 	};
 	updateExtensionColumns(columnDataMap) {
 		const errors = [];
@@ -599,12 +597,10 @@ class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 		} else {
 			con.debug("nothing to update");
 		}
-		if (errors.length === 0) {
-			return true;
-		} if (errors.length === 1) {
-			throw errors[0];
+		if (!(errors.length === 0)) {
+			throw only(errors) ?? new AggregateError(errors, "Failed to update columns");
 		}
-		throw new AggregateError(errors, "Failed to update colunms");
+		return true;
 	};
 };
 
