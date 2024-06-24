@@ -265,6 +265,43 @@ class CuColAPI_BaseColumnRegistry {
 			return false;
 		});
 	};
+	validateRemoveColumns(columnDescriptors = undefined, onError = undefined) {
+		if (columnDescriptors == null) {
+			return Array.from(this._registry.keys());
+		} else if (!Array.isArray(columnDescriptors)) {
+			columnDescriptors = [ columnDescriptors ];
+		}
+		const errors = [];
+		const idSet = new Set();
+		for (const descriptor of columnDescriptors) {
+			let id;
+			try {
+				id = typeof descriptor === 'string' ? descriptor : descriptor?.id;
+				// TODO String(id)
+				if (!id || typeof id !== 'string') {
+					throw new TypeError("Column ID is not a String");
+				}
+				if (!this._registry.has(id)) {
+					throw new Error(`Unknown column "${id}"`);
+				}
+				if (idSet.has(id)) {
+					throw new Error(`Duplicated column "${id}"`);
+				}
+				idSet.add(id);
+			} catch (ex) {
+				try {
+					if (onError) { 
+						onError(ex);
+						return;
+					}
+				} catch (exOnError) {
+					console.log(exOnError);
+				}
+				console.log(ex);
+			}
+		}
+		return Array.from(idSet);
+	};
 };
 
 class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
@@ -488,29 +525,12 @@ class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 	/** `null` or empty array means remove all.
 	 * Removes windows listener if no column remained. */
 	removeExtensionColumns(columnDescriptors = undefined) {
-		if (!Array.isArray(columnDescriptors)) {
-			columnDescriptors = columnDescriptors == null ? [] : [ columnDescriptors ];
-		}
 		const errors = [];
-		const idSet = new Set();
-		for (const descriptor of columnDescriptors) {
-			let id;
-			try {
-				id = typeof descriptor === 'string' ? descriptor : descriptor?.id;
-				// TODO String(id)
-				if (!id || typeof id !== 'string') {
-					throw new TypeError("Column ID is not a String");
-				}
-				if (!this._registry.has(id)) {
-					throw new Error(`Unknown column "${id}"`);
-				}
-				idSet.add(id);
-			} catch (ex) {
-				con.error("error: remove: building column list", id, ex);
-				errors.push(ex);
-			}
-		}
-		if (columnDescriptors.length === 0 || idSet.size === this._registry.size) {
+		const removeIds = this.validateRemoveColumns(
+			columnDescriptors,
+			ex => { console.log(ex); errors.push(ex) }
+		);
+		if (removeIds.length === this._registry.size) {
 			con.debug("unregister window listener");
 			try {
 				if (
@@ -531,12 +551,12 @@ class CuColAPI_LegacyColumnRegistry extends CuColAPI_BaseColumnRegistry {
 			try {
 				CuColAPI_Extension.forEachWindow(
 					this.extensionId,
-					win => this.removeWindowColumns(win, idSet));
+					win => this.removeWindowColumns(win, removeIds));
 			} catch (ex) {
 				con.error("remove from existing windows", ex);
 				errors.push(ex);
 			}
-			for (const id of idSet) {
+			for (const id of removeIds) {
 				this._registry.delete(id);
 			}
 		}
