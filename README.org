@@ -7,7 +7,7 @@
 #+PROPERTY: header-args :eval never-export :exports code :results silent
 #+description: Allows to see which mail messages are mentioned in your notes.
 
-Allows to see which mail messages are mentioned in your notes.
+Allows to see what mail messages are mentioned in your notes.
 
 # Attributes are ignored by org-ruby
 #+attr_html: :alt Screenshot of orco in action: icons in message list and links to notes displayed in popup
@@ -26,21 +26,23 @@ in Org files (actually any text files with the same link format).
 It may show mentions of a message or a link in your notes.
 #+end_abstract
 
-** orco-0.4.0 highlights
+** orco-0.5.1 highlight
 
-- Mentions popup page now shows message headers. Context menu item for a link
-  in the message body may display sender, date, subject in the popup
-  if you have the referenced message in your mail.
-- Popup size is fixed to avoid its jumps from left to right size.
-- Some other fixes.
+Mostly restored the custom column feature for Thunderbird-115.10 and newer.
+Ability to add custom column was lost during Thunderbird GUI redesign
+and it took time to enable it again. I have not figured out
+if it is possible to mark collapsed thread, and it is regression
+in comparison to Thunderbird-102.
 
 See <https://github.com/maxnikulin/orco/releases/>
 Already installed add-on should be updated unless it is disabled.
-[2022-08-29 Mon]
+[2024-06-25 Tue]
 
-** It is an alpha version
+** It is a beta version
 
-Compatibility: Thunderbird-91 and above.
+Compatibility: Thunderbird-91 and above
+with a hole between Thunderbird-111 and Thunderbird-115.10/Thunderbird-124,
+see [[https://bugzilla.mozilla.org/1817682][Bug #1817682]].
 
 *Warning.* Project development stage: proof of concept.
 I am not tightly familiar with Thunderbird internals.
